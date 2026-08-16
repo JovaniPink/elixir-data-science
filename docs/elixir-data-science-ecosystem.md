@@ -16,7 +16,7 @@ At the verification date, the published documentation included
 [Explorer 0.12.0](https://explorer.hexdocs.pm/Explorer.html),
 [Axon 0.8.1](https://elixir-nx.github.io/axon/guides.html),
 [Bumblebee 0.7.1](https://bumblebee.hexdocs.pm/readme.html),
-[Scholar 0.4.1](https://scholar.hexdocs.pm/readme.html), and
+[Scholar 0.4.2](https://scholar.hexdocs.pm/readme.html), and
 [EXLA 0.13.1](https://exla.hexdocs.pm/). The core repositories also showed
 recent July 2026 activity in the
 [Numerical Elixir organization](https://github.com/elixir-nx).
