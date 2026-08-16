@@ -13,6 +13,13 @@ an implemented collection.
 There is therefore nothing to install, build, or execute from the current
 default branch.
 
+## Ecosystem research
+
+The dated [Elixir data science and machine learning ecosystem brief](docs/elixir-data-science-ecosystem.md)
+maps the current tools, strengths, limitations, and a possible learning path.
+It is research documentation only and does not reactivate this repository or
+claim that any experiment has been implemented here.
+
 ## Reactivation contract
 
 A future experiment should arrive as a focused pull request that includes:
@@ -33,6 +40,7 @@ redistributed.
 
 - `README.md` — current scope and reactivation requirements.
 - `AGENTS.md` — repository-local contributor guidance.
+- `docs/elixir-data-science-ecosystem.md` — dated ecosystem research brief.
 - `LICENSE` — license for repository-authored material.
 
 ## License
