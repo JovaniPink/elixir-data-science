@@ -2,17 +2,19 @@
 
 ## Purpose
 
-This repository is an inventory-only placeholder for possible Elixir
-data-science experiments. It currently contains no runnable project.
+This repository contains small, reviewable Elixir data-science experiments.
+The first experiment uses first-party BLS economic data, Scholar clustering,
+Explorer dataframes, and VegaLite views.
 
 ## Working rules
 
-- Do not describe the repository as containing implemented experiments until
-  source files exist.
-- A reactivation PR must establish the supported Elixir and Erlang/OTP range,
-  a `mix.exs`, a committed `mix.lock` when dependencies exist, tests, and exact
-  run instructions.
+- Keep supported and tested Elixir and Erlang/OTP versions, `mix.exs`,
+  `mix.lock`, tests, and exact run instructions synchronized.
 - Do not commit datasets until their source, license, retrieval date, and
   permitted use are documented.
+- Keep observed source data, repository-derived transformations, model output,
+  and interpretation visibly distinct.
+- Do not turn descriptive clusters into causal, predictive, recession, or
+  financial claims without a separately reviewed validation design.
 - Keep generated outputs and credentials out of Git.
 - Stage explicit files and preserve unrelated work.

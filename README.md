@@ -5,24 +5,105 @@ intersection of Elixir and data science.
 
 ## Current status
 
-This is an **inventory-only placeholder**. The repository currently contains
-no Elixir source, Mix project, dependency manifest, tests, notebooks, datasets,
-or runnable examples. The original two-line README described an intention, not
-an implemented collection.
+The first focused experiment is implemented: a Livebook-first exploration of
+monthly U.S. inflation and unemployment using first-party BLS data, Explorer,
+Scholar K-means, and VegaLite.
 
-There is therefore nothing to install, build, or execute from the current
-default branch.
+The experiment retrieves data at runtime and commits no raw dataset, generated
+model output, or credentials.
+
+The [dated run record](docs/experiments/bls-macro-clustering.md) preserves the
+verified output and a bounded interpretation separately from the live notebook.
+
+## Research question
+
+Can K-means separate recurring combinations of observed U.S. CPI inflation and
+unemployment in a fixed 2006–2025 sample?
+
+The output is descriptive and ex post. Cluster IDs are arbitrary; they are not
+objective economic regimes, causal explanations, recession predictions,
+trading signals, or financial advice.
+
+## Data source and rights boundary
+
+The runtime source is the [BLS Public Data API](https://www.bls.gov/developers/)
+using CPI-U series `CUUR0000SA0` and the seasonally adjusted civilian
+unemployment-rate series `LNS14000000`. The
+[source record](docs/data-sources/bls-public-data-api.md) documents series
+definitions, access limits, current terms, required attribution, retrieval
+behavior, transformations, and analytical limitations.
+
+FRED is not the training-data source. Its
+[current terms](https://fred.stlouisfed.org/legal/terms/) prohibit using FRED
+services or content in connection with developing or training machine-learning
+systems, so this experiment retrieves the series directly from BLS under the
+reviewed BLS terms.
+
+## Toolchain
+
+- Supported: Elixir 1.19.x–1.20.x and Erlang/OTP 27.x–28.x.
+- Tested Mix runtime: Elixir 1.20.2 and Erlang/OTP 27.3.4.15.
+- Tested notebook runtime: Livebook 0.19.8 with Elixir 1.19.3 and
+  Erlang/OTP 28.
+- Reproducible container: `elixir:1.20.2-otp-27`.
+
+The exact local asdf versions are recorded in `.tool-versions`; dependency
+versions are committed in `mix.lock`.
+
+## Validate
+
+With the supported local toolchain:
+
+```bash
+mix deps.get --check-locked
+mix format --check-formatted
+mix test
+elixir scripts/verify_livebook_runtime.exs
+```
+
+Or without a local Elixir installation:
+
+```bash
+docker run --rm -v "$PWD:/workspace" -w /workspace \
+  elixir:1.20.2-otp-27 \
+  sh -lc 'mix local.hex --force && mix local.rebar --force && mix deps.get --check-locked && mix format --check-formatted && mix test'
+```
+
+## Run the analysis
+
+The command below makes two anonymous BLS requests, records the UTC retrieval
+time, reports unavailable source values, derives the aligned monthly
+observations, fits three clusters with a fixed seed, and prints neutral cluster
+profiles. It writes no data file. The August 16, 2026 verification produced 227
+observations because BLS marks October 2025 unavailable in both source series.
+
+```bash
+mix run scripts/run_bls_macro_clustering.exs
+```
+
+## Open the Livebook
+
+Open [`notebooks/bls_macro_clustering.livemd`](notebooks/bls_macro_clustering.livemd)
+in Livebook Desktop 0.19.8 or run the pinned container from this repository:
+
+```bash
+docker run --rm -p 8080:8080 -v "$PWD:/data" \
+  ghcr.io/livebook-dev/livebook:0.19.8
+```
+
+Then open `/data/notebooks/bls_macro_clustering.livemd`. The notebook uses the
+repository's `mix.lock`, retrieves BLS data at runtime, displays Explorer
+tables, and renders VegaLite time-series and cluster views.
 
 ## Ecosystem research
 
 The dated [Elixir data science and machine learning ecosystem brief](docs/elixir-data-science-ecosystem.md)
 maps the current tools, strengths, limitations, and a possible learning path.
-It is research documentation only and does not reactivate this repository or
-claim that any experiment has been implemented here.
+It is the research context for this implementation.
 
-## Reactivation contract
+## Experiment contract
 
-A future experiment should arrive as a focused pull request that includes:
+Each experiment should arrive as a focused pull request that includes:
 
 1. a clearly stated research question and expected output;
 2. a supported Elixir and Erlang/OTP version range;
@@ -38,7 +119,14 @@ redistributed.
 
 ## Repository contents
 
-- `README.md` — current scope and reactivation requirements.
+- `lib/` — BLS retrieval, transformations, clustering, and chart builders.
+- `test/` — synthetic BLS-shaped fixtures and deterministic tests.
+- `notebooks/bls_macro_clustering.livemd` — documented interactive analysis.
+- `scripts/run_bls_macro_clustering.exs` — non-notebook execution path.
+- `scripts/verify_livebook_runtime.exs` — standalone path/lock/chart check.
+- `docs/data-sources/` — source, terms, provenance, and claim boundaries.
+- `docs/experiments/` — dated run records and bounded interpretations.
+- `README.md` — setup, validation, execution, and scope.
 - `AGENTS.md` — repository-local contributor guidance.
 - `docs/elixir-data-science-ecosystem.md` — dated ecosystem research brief.
 - `LICENSE` — license for repository-authored material.

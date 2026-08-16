@@ -1,0 +1,120 @@
+# BLS inflation and unemployment clustering
+
+This notebook asks a deliberately narrow question:
+
+> Can K-means separate recurring combinations of observed U.S. CPI inflation
+> and unemployment in a fixed historical sample?
+
+It does **not** identify true economic regimes, explain causality, predict
+recessions, or produce an investment signal. Cluster IDs are arbitrary.
+
+## Setup
+
+The notebook installs this repository as a path dependency and uses its
+committed lockfile. Open it from the repository so `__DIR__` resolves to the
+`notebooks/` directory.
+
+```elixir
+project_path = Path.expand("..", __DIR__)
+
+Mix.install(
+  [{:elixir_data_science, path: project_path, env: :dev}],
+  lockfile: Path.join(project_path, "mix.lock")
+)
+```
+
+```elixir
+alias ElixirDataScience.{BLS, Charts, MacroClustering}
+
+Nx.global_default_backend(EXLA.Backend)
+Nx.Defn.global_default_options(compiler: EXLA, client: :host)
+```
+
+## Retrieve first-party BLS data
+
+The fixed sample uses complete calendar years and anonymous 10-year request
+windows. No API key is required, and no raw response is saved.
+
+```elixir
+{:ok, dataset} = BLS.fetch(2006, 2025)
+observations = MacroClustering.observations(dataset)
+
+%{
+  source: dataset.source_url,
+  series_ids: BLS.series_ids(),
+  retrieved_at_utc: dataset.retrieved_at,
+  request_windows: dataset.request_windows,
+  aligned_observations: length(observations),
+  unavailable_source_values: dataset.unavailable,
+  messages: dataset.messages
+}
+```
+
+> BLS.gov cannot vouch for the data or analyses derived from these data after
+> the data have been retrieved from BLS.gov.
+
+## Inspect the derived observations
+
+`inflation_yoy` is the repository-derived 12-month percentage change in the
+unadjusted CPI-U index. `unemployment_rate` is the published seasonally
+adjusted civilian unemployment rate.
+
+```elixir
+observations
+|> Enum.take(12)
+|> Explorer.DataFrame.new()
+```
+
+## Fit descriptive K-means
+
+Both features are standardized before fitting. The fixed seed and 20 starts
+make this run repeatable under the locked toolchain; they do not make the
+three-cluster choice an economic fact.
+
+```elixir
+{:ok, analysis} =
+  MacroClustering.cluster(observations,
+    num_clusters: 3,
+    seed: 42,
+    num_runs: 20
+  )
+
+MacroClustering.profiles_dataframe(analysis)
+```
+
+Read each profile only as a mean summary of months assigned to an arbitrary
+cluster ID. Do not attach names such as “stagflation” or “recession” without a
+separate, pre-specified definition and validation design.
+
+## VegaLite views
+
+```elixir
+analysis.observations
+|> Charts.timeline()
+|> Kino.VegaLite.new()
+```
+
+```elixir
+analysis.observations
+|> Charts.scatter()
+|> Kino.VegaLite.new()
+```
+
+## Interpretation checklist
+
+Before making any claim, verify all of the following:
+
+1. The BLS retrieval timestamp and any API messages are shown.
+2. CPI-U population coverage and the CPI/unemployment seasonal-adjustment
+   difference are acknowledged.
+3. The missing October 2025 source values are shown and are not imputed.
+4. Cluster IDs remain arbitrary, and results are described as sample-specific.
+5. The selected sample, features, standardization, cluster count, seed, and
+   number of starts are reported.
+6. Serial correlation, overlapping 12-month CPI windows, revisions, and
+   sensitivity to modeling choices remain explicit.
+7. No causal, recession-prediction, trading, or individualized financial claim
+   is made.
+
+The full source and methods record is in
+[`docs/data-sources/bls-public-data-api.md`](../docs/data-sources/bls-public-data-api.md).
