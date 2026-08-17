@@ -14,6 +14,8 @@ model output, or credentials.
 
 The [dated run record](docs/experiments/bls-macro-clustering.md) preserves the
 verified output and a bounded interpretation separately from the live notebook.
+The [documentation guide](docs/README.md) provides a review path through the
+ecosystem brief, source record, executed run, and sibling Python replication.
 
 ## Research question
 
@@ -126,6 +128,7 @@ redistributed.
 - `scripts/verify_livebook_runtime.exs` — standalone path/lock/chart check.
 - `docs/data-sources/` — source, terms, provenance, and claim boundaries.
 - `docs/experiments/` — dated run records and bounded interpretations.
+- `docs/README.md` — documentation map and cross-language replication boundary.
 - `README.md` — setup, validation, execution, and scope.
 - `AGENTS.md` — repository-local contributor guidance.
 - `docs/elixir-data-science-ecosystem.md` — dated ecosystem research brief.
