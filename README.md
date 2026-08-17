@@ -124,6 +124,7 @@ redistributed.
 - `notebooks/bls_macro_clustering.livemd` — documented interactive analysis.
 - `scripts/run_bls_macro_clustering.exs` — non-notebook execution path.
 - `scripts/verify_livebook_runtime.exs` — standalone path/lock/chart check.
+- `docs/README.md` — project knowledge map and maintenance contract.
 - `docs/data-sources/` — source, terms, provenance, and claim boundaries.
 - `docs/experiments/` — dated run records and bounded interpretations.
 - `README.md` — setup, validation, execution, and scope.

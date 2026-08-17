@@ -53,6 +53,12 @@ selected by a pre-specified validation criterion. Inertia would mechanically
 fall as more clusters are added, so the reported value alone does not validate
 the choice.
 
+The sibling
+[Python run record](https://github.com/JovaniPink/python-data-science/blob/main/docs/experiments/bls-macro-clustering.md)
+reproduces the same profile groups up to arbitrary cluster-label permutation.
+That agreement checks two independent implementations; it does not validate the
+clusters as economic regimes.
+
 ## Reproduction
 
 Run:
