@@ -14,12 +14,12 @@ jobs:
     strategy:
       matrix:
         image:
-          - elixir:1.20.2-otp-27
-          - elixir:1.19.5-otp-28
+          - elixir:1.20.2-otp-27@sha256:998bb64cb24209d959eb48af9bac1a087f4b5b4d32e91f6e67d666659af04bcd
+          - elixir:1.19.5-otp-28@sha256:4eda86b01d2a3448aef341a60ba962a584ed330e33ce526a70b1b6d90ede6e41
     container: ${{ matrix.image }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get --check-locked
