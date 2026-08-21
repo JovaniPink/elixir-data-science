@@ -13,16 +13,21 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        image:
-          - elixir:1.20.2-otp-27@sha256:998bb64cb24209d959eb48af9bac1a087f4b5b4d32e91f6e67d666659af04bcd
-          - elixir:1.19.5-otp-28@sha256:4eda86b01d2a3448aef341a60ba962a584ed330e33ce526a70b1b6d90ede6e41
+        include:
+          - image: elixir:1.20.2-otp-27@sha256:998bb64cb24209d959eb48af9bac1a087f4b5b4d32e91f6e67d666659af04bcd
+            rebar_url: https://builds.hex.pm/installs/1.18.3/rebar3-3.24.0-otp-27
+            rebar_sha512: 158473850233093e6a1417e9779919cb6768402ea967db510d926bc5e74361377e9176014e827c622098e0dbf96b505677addc4bd4817ce2b9b4f4bc8121768b
+          - image: elixir:1.19.5-otp-28@sha256:4eda86b01d2a3448aef341a60ba962a584ed330e33ce526a70b1b6d90ede6e41
+            rebar_url: https://builds.hex.pm/installs/1.18.4/rebar3-3.25.1-otp-28
+            rebar_sha512: 992fd755b7926fae455e5e07d9d195f4d3e7f181609eed1b9cabfe548624df10d148cd4b59bda40bebb185d3d68f9a9fd68a70b294101c8ad9cf0fadcc683d24
     container: ${{ matrix.image }}
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: mix local.hex --force
-      - run: mix local.rebar --force
+      - run: mix local.hex 2.5.1 --force
+      - run: mix local.rebar rebar3 "${{ matrix.rebar_url }}" --sha512 "${{ matrix.rebar_sha512 }}" --force
       - run: mix deps.get --check-locked
+      - run: mix hex.audit
       - run: mix format --check-formatted
       - run: mix test
       - run: elixir scripts/verify_livebook_runtime.exs
