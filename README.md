@@ -47,7 +47,8 @@ reviewed BLS terms.
 - Tested Mix runtime: Elixir 1.20.2 and Erlang/OTP 27.3.4.15.
 - Tested notebook runtime: Livebook 0.19.8 with Elixir 1.19.3 and
   Erlang/OTP 28.
-- Reproducible container: `elixir:1.20.2-otp-27`.
+- CI container: `elixir:1.20.2-otp-27` pinned to digest
+  `sha256:998bb64cb24209d959eb48af9bac1a087f4b5b4d32e91f6e67d666659af04bcd`.
 
 The exact local asdf versions are recorded in `.tool-versions`; dependency
 versions are committed in `mix.lock`.
@@ -58,6 +59,7 @@ With the supported local toolchain:
 
 ```bash
 mix deps.get --check-locked
+mix hex.audit
 mix format --check-formatted
 mix test
 elixir scripts/verify_livebook_runtime.exs
@@ -67,9 +69,13 @@ Or without a local Elixir installation:
 
 ```bash
 docker run --rm -v "$PWD:/workspace" -w /workspace \
-  elixir:1.20.2-otp-27 \
-  sh -lc 'mix local.hex --force && mix local.rebar --force && mix deps.get --check-locked && mix format --check-formatted && mix test'
+  elixir:1.20.2-otp-27@sha256:998bb64cb24209d959eb48af9bac1a087f4b5b4d32e91f6e67d666659af04bcd \
+  sh -lc 'mix local.hex 2.5.1 --force && mix local.rebar rebar3 https://builds.hex.pm/installs/1.18.3/rebar3-3.24.0-otp-27 --sha512 158473850233093e6a1417e9779919cb6768402ea967db510d926bc5e74361377e9176014e827c622098e0dbf96b505677addc4bd4817ce2b9b4f4bc8121768b --force && mix deps.get --check-locked && mix hex.audit && mix format --check-formatted && mix test && elixir scripts/verify_livebook_runtime.exs'
 ```
+
+The Hex client, Rebar artifact, and container are immutable in CI. The security
+gate fails on retired Hex packages or known advisories; the repository does not
+carry advisory suppressions.
 
 ## Run the analysis
 
@@ -90,7 +96,7 @@ in Livebook Desktop 0.19.8 or run the pinned container from this repository:
 
 ```bash
 docker run --rm -p 8080:8080 -v "$PWD:/data" \
-  ghcr.io/livebook-dev/livebook:0.19.8
+  ghcr.io/livebook-dev/livebook:0.19.8@sha256:38eed8467d3df794dd36cbe722768e46d709b02e00368e0a06aa7508220a8763
 ```
 
 Then open `/data/notebooks/bls_macro_clustering.livemd`. The notebook uses the

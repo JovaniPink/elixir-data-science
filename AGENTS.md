@@ -10,6 +10,9 @@ Explorer dataframes, and VegaLite views.
 
 - Keep supported and tested Elixir and Erlang/OTP versions, `mix.exs`,
   `mix.lock`, tests, and exact run instructions synchronized.
+- Keep CI container, Hex, and Rebar bootstrap inputs immutable. Run
+  `mix hex.audit` after `mix deps.get --check-locked`; do not suppress an
+  advisory or retirement without a separately reviewed justification.
 - Do not commit datasets until their source, license, retrieval date, and
   permitted use are documented.
 - Keep observed source data, repository-derived transformations, model output,
