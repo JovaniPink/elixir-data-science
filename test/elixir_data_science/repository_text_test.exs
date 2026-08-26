@@ -93,8 +93,22 @@ defmodule ElixirDataScience.RepositoryTextTest do
 
   @spec tracked_files() :: [String.t()]
   defp tracked_files do
+    repository_path = File.cwd!()
+
     {output, 0} =
-      System.cmd("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard"])
+      System.cmd(
+        "git",
+        [
+          "-c",
+          "safe.directory=#{repository_path}",
+          "ls-files",
+          "-z",
+          "--cached",
+          "--others",
+          "--exclude-standard"
+        ],
+        stderr_to_stdout: true
+      )
 
     output
     |> String.split(<<0>>, trim: true)
