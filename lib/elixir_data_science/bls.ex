@@ -11,6 +11,8 @@ defmodule ElixirDataScience.BLS do
   @series_ids ["CUUR0000SA0", "LNS14000000"]
   @max_unregistered_years 10
 
+  @type series_id :: String.t()
+
   @type point :: %{
           date: Date.t(),
           value: float(),
@@ -29,15 +31,32 @@ defmodule ElixirDataScience.BLS do
           start_year: pos_integer(),
           end_year: pos_integer(),
           request_windows: [{pos_integer(), pos_integer()}],
-          series: %{required(String.t()) => [point()]},
-          unavailable: %{required(String.t()) => [unavailable_point()]},
+          series: %{required(series_id()) => [point()]},
+          unavailable: %{required(series_id()) => [unavailable_point()]},
           messages: [String.t()]
         }
 
+  @type request_payload :: %{
+          required(String.t()) => String.t() | [series_id()]
+        }
+
+  @type request_fun :: (request_payload() -> {:ok, map()} | {:error, term()})
+
+  @type fetch_option ::
+          {:request_fun, request_fun()}
+          | {:registration_key, String.t()}
+
+  @type parsed_response :: %{
+          series: %{required(series_id()) => [point()]},
+          unavailable: %{required(series_id()) => [unavailable_point()]}
+        }
+
   @doc "Returns the two BLS series IDs used by the experiment."
+  @spec series_ids() :: [series_id()]
   def series_ids, do: @series_ids
 
   @doc "Returns the BLS API endpoint used for retrieval."
+  @spec endpoint() :: String.t()
   def endpoint, do: @endpoint
 
   @doc """
@@ -47,7 +66,7 @@ defmodule ElixirDataScience.BLS do
   may be supplied with `:registration_key`, but the default path is anonymous
   and does not require credentials.
   """
-  @spec fetch(pos_integer(), pos_integer(), keyword()) ::
+  @spec fetch(pos_integer(), pos_integer(), [fetch_option()]) ::
           {:ok, dataset()} | {:error, term()}
   def fetch(start_year, end_year, opts \\ []) do
     with :ok <- validate_years(start_year, end_year) do
@@ -107,11 +126,7 @@ defmodule ElixirDataScience.BLS do
 
   @doc "Parses one successful BLS response into normalized monthly series."
   @spec parse_response(map()) ::
-          {:ok,
-           %{
-             series: %{required(String.t()) => [point()]},
-             unavailable: %{required(String.t()) => [unavailable_point()]}
-           }, [String.t()]}
+          {:ok, parsed_response(), [String.t()]}
           | {:error, term()}
   def parse_response(%{"status" => "REQUEST_SUCCEEDED"} = body) do
     with {:ok, series_entries} <- result_series(body),

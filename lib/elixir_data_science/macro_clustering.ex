@@ -19,7 +19,54 @@ defmodule ElixirDataScience.MacroClustering do
           preliminary?: boolean()
         }
 
-  @type labeled_observation :: observation() | %{cluster: non_neg_integer()}
+  @type labeled_observation :: %{
+          date: Date.t(),
+          inflation_yoy: float(),
+          unemployment_rate: float(),
+          preliminary?: boolean(),
+          cluster: non_neg_integer()
+        }
+
+  @type cluster_option ::
+          {:num_clusters, pos_integer()}
+          | {:seed, integer()}
+          | {:num_runs, pos_integer()}
+
+  @type feature_summary :: %{mean: float(), std: float()}
+
+  @type standardization :: %{
+          inflation_yoy: feature_summary(),
+          unemployment_rate: feature_summary()
+        }
+
+  @type cluster_profile :: %{
+          cluster: String.t(),
+          months: pos_integer(),
+          mean_inflation_yoy: float(),
+          mean_unemployment_rate: float(),
+          first_month: String.t(),
+          last_month: String.t()
+        }
+
+  @type kmeans_model :: %KMeans{
+          num_iterations: Nx.Tensor.t(),
+          clusters: Nx.Tensor.t(),
+          inertia: Nx.Tensor.t(),
+          labels: Nx.Tensor.t()
+        }
+
+  @type analysis :: %{
+          observations: [labeled_observation()],
+          profiles: [cluster_profile()],
+          standardization: standardization(),
+          seed: integer(),
+          num_runs: pos_integer(),
+          inertia: float(),
+          num_iterations: non_neg_integer(),
+          model: kmeans_model()
+        }
+
+  @type cluster_error :: :constant_feature | {:invalid_cluster_request, non_neg_integer(), term()}
 
   @doc """
   Aligns CPI-U and unemployment by month and computes 12-month CPI inflation.
@@ -67,7 +114,8 @@ defmodule ElixirDataScience.MacroClustering do
     * `:num_runs` - defaults to 20
 
   """
-  @spec cluster([observation()], keyword()) :: {:ok, map()} | {:error, term()}
+  @spec cluster([observation()], [cluster_option()]) ::
+          {:ok, analysis()} | {:error, cluster_error()}
   def cluster(observations, opts \\ []) when is_list(observations) do
     num_clusters = Keyword.get(opts, :num_clusters, 3)
     seed = Keyword.get(opts, :seed, 42)
@@ -106,7 +154,7 @@ defmodule ElixirDataScience.MacroClustering do
   end
 
   @doc "Converts labeled observations to an Explorer dataframe for inspection."
-  @spec to_dataframe(map()) :: Explorer.DataFrame.t()
+  @spec to_dataframe(analysis()) :: Explorer.DataFrame.t()
   def to_dataframe(%{observations: observations}) do
     observations
     |> Enum.map(fn observation ->
@@ -118,7 +166,7 @@ defmodule ElixirDataScience.MacroClustering do
   end
 
   @doc "Converts cluster profiles to an Explorer dataframe."
-  @spec profiles_dataframe(map()) :: Explorer.DataFrame.t()
+  @spec profiles_dataframe(analysis()) :: Explorer.DataFrame.t()
   def profiles_dataframe(%{profiles: profiles}), do: Explorer.DataFrame.new(profiles)
 
   defp point_index(points), do: Map.new(points, &{&1.date, &1})
@@ -159,8 +207,9 @@ defmodule ElixirDataScience.MacroClustering do
         months: length(rows),
         mean_inflation_yoy: rows |> Enum.map(& &1.inflation_yoy) |> mean(),
         mean_unemployment_rate: rows |> Enum.map(& &1.unemployment_rate) |> mean(),
-        first_month: rows |> Enum.min_by(& &1.date) |> Map.fetch!(:date) |> Date.to_iso8601(),
-        last_month: rows |> Enum.max_by(& &1.date) |> Map.fetch!(:date) |> Date.to_iso8601()
+        first_month:
+          rows |> Enum.min_by(& &1.date, Date) |> Map.fetch!(:date) |> Date.to_iso8601(),
+        last_month: rows |> Enum.max_by(& &1.date, Date) |> Map.fetch!(:date) |> Date.to_iso8601()
       }
     end)
     |> Enum.sort_by(& &1.cluster)

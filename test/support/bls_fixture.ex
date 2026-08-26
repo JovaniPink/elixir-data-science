@@ -1,6 +1,7 @@
 defmodule ElixirDataScience.BLSFixture do
   @moduledoc false
 
+  @spec response(pos_integer(), pos_integer()) :: map()
   def response(start_year, end_year) do
     %{
       "status" => "REQUEST_SUCCEEDED",

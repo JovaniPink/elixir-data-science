@@ -10,7 +10,8 @@ running the Elixir project.
 |---|---|---|
 | Understand the Elixir ecosystem | [Elixir for data science and machine learning](elixir-data-science-ecosystem.md) | A dated map of the Elixir, Nx, Explorer, Scholar, Axon, and Livebook ecosystem, including limitations |
 | Review the source boundary | [BLS Public Data API source record](data-sources/bls-public-data-api.md) | Series definitions, terms, retrieval behavior, transformations, missing-source treatment, and claim limits |
-| Review the observed result | [BLS macro clustering run record](experiments/bls-macro-clustering.md) | The exact executed configuration, observed profiles, missing month, and bounded interpretation |
+| Review the latest observed result | [BLS macro clustering run record: August 26, 2026](experiments/bls-macro-clustering-2026-08-26.md) | The exact executed configuration through July 2026, observed profiles, unavailable and preliminary values, and bounded interpretation |
+| Review the prior observed result | [BLS macro clustering run record: August 16, 2026](experiments/bls-macro-clustering.md) | The preserved 2006-2025 run before the 2026 sample extension |
 | Reproduce interactively | [BLS macro clustering Livebook](../notebooks/bls_macro_clustering.livemd) | The executable notebook backed by the repository lockfile |
 
 The root [README](../README.md) remains the operational entry point for setup,
@@ -25,15 +26,20 @@ scikit-learn, Vega-Altair, and marimo. Its
 [documentation guide](https://github.com/JovaniPink/python-data-science/blob/main/docs/README.md)
 links the Python research, source, and run records.
 
-The two implementations intentionally share:
+The two implementations intentionally share a January 2006 through December
+2025 base sample:
 
 - first-party BLS series `CUUR0000SA0` and `LNS14000000`;
-- the January 2006 through December 2025 requested sample;
 - 12-month CPI-U change and unemployment-rate level as features;
 - explicit exclusion, without imputation, of unavailable October 2025 data;
 - population standardization, three K-means clusters, seed 42, and 20 starts;
 - neutral profile reporting and the same non-causal, non-predictive claim
   boundary.
+
+The August 26, 2026 Elixir run extends its fixed API request end year to 2026
+and includes the jointly released observations through July. The linked Python
+run remains the preserved 2006-2025 comparison, so the latest Elixir profiles
+are not presented as a current cross-language replication.
 
 They do not share runtime code, dataframe libraries, clustering
 implementations, or notebook systems. Agreement of the observed profile groups

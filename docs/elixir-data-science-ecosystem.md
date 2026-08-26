@@ -137,8 +137,7 @@ Nx.Defn.global_default_options(compiler: EXLA, client: :host)
 require Explorer.DataFrame, as: DF
 
 Explorer.Datasets.iris()
-|> DF.group_by("species")
-|> DF.summarise(mean_petal_length: mean(petal_length))
+|> DF.frequencies(["species"])
 ```
 
 This is a research example, not a command that is currently runnable from this

@@ -6,6 +6,7 @@ defmodule ElixirDataScience.BLSTest do
 
   test "splits anonymous requests into inclusive ten-year windows" do
     assert BLS.year_windows(2006, 2025) == [{2006, 2015}, {2016, 2025}]
+    assert BLS.year_windows(2006, 2026) == [{2006, 2015}, {2016, 2025}, {2026, 2026}]
     assert BLS.year_windows(2025, 2026) == [{2025, 2026}]
   end
 
@@ -69,6 +70,41 @@ defmodule ElixirDataScience.BLSTest do
                value: "-",
                footnotes: ["Data unavailable due to the 2025 lapse in appropriations."]
              }
+           ]
+  end
+
+  test "marks preliminary monthly source values from BLS footnotes" do
+    body = %{
+      "status" => "REQUEST_SUCCEEDED",
+      "message" => [],
+      "Results" => %{
+        "series" => [
+          %{
+            "seriesID" => "CUUR0000SA0",
+            "data" => [
+              %{
+                "year" => "2026",
+                "period" => "M06",
+                "value" => "333.952",
+                "footnotes" => [%{"text" => "Preliminary."}]
+              },
+              %{
+                "year" => "2026",
+                "period" => "M07",
+                "value" => "333.918",
+                "footnotes" => [%{"code" => "P", "text" => "Preliminary."}]
+              }
+            ]
+          }
+        ]
+      }
+    }
+
+    assert {:ok, parsed, []} = BLS.parse_response(body)
+
+    assert parsed.series["CUUR0000SA0"] == [
+             %{date: ~D[2026-06-01], value: 333.952, preliminary?: true},
+             %{date: ~D[2026-07-01], value: 333.918, preliminary?: true}
            ]
   end
 
