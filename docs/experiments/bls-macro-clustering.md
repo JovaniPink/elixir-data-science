@@ -5,7 +5,7 @@ _Executed August 16, 2026 at 19:24:08 UTC._
 ## Question and claim boundary
 
 Can K-means separate recurring combinations of observed U.S. CPI inflation and
-unemployment in a fixed 2006–2025 sample?
+unemployment in a fixed 2006-2025 sample?
 
 This is an ex-post descriptive exercise. The run does not establish causal
 economic regimes, select an optimal cluster count, classify recessions,
@@ -17,8 +17,8 @@ forecast future data, or produce a trading or financial-advice signal.
 |---|---|
 | Source | BLS Public Data API |
 | Source series | `CUUR0000SA0`, `LNS14000000` |
-| Requested years | 2006–2025 |
-| Anonymous API windows | 2006–2015, 2016–2025 |
+| Requested years | 2006-2025 |
+| Anonymous API windows | 2006-2015, 2016-2025 |
 | Derived features | 12-month CPI-U change, unemployment-rate level |
 | Standardization | Population mean and standard deviation per feature |
 | K-means configuration | 3 clusters, seed 42, 20 starts |

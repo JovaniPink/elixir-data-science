@@ -24,7 +24,7 @@ Mix.install(
 ```
 
 ```elixir
-alias ElixirDataScience.{BLS, Charts, MacroClustering}
+alias ElixirDataScience.{BLS, BLSMacroExperiment, Charts, MacroClustering}
 
 Nx.global_default_backend(EXLA.Backend)
 Nx.Defn.global_default_options(compiler: EXLA, client: :host)
@@ -32,20 +32,35 @@ Nx.Defn.global_default_options(compiler: EXLA, client: :host)
 
 ## Retrieve first-party BLS data
 
-The fixed sample uses complete calendar years and anonymous 10-year request
-windows. No API key is required, and no raw response is saved.
+The fixed request boundary ends in 2026 and uses anonymous 10-year request
+windows. BLS returns only released monthly values, so this run aligns the two
+series through July 2026 rather than treating the partial year as complete. No
+API key is required, and no raw response is saved.
 
 ```elixir
-{:ok, dataset} = BLS.fetch(2006, 2025)
+config = BLSMacroExperiment.configuration()
+
+{:ok, dataset} = BLS.fetch(config.start_year, config.end_year)
 observations = MacroClustering.observations(dataset)
+
+preliminary_source_values =
+  for {series_id, points} <- dataset.series,
+      point <- points,
+      point.preliminary? do
+    %{series_id: series_id, month: point.date, value: point.value}
+  end
 
 %{
   source: dataset.source_url,
   series_ids: BLS.series_ids(),
   retrieved_at_utc: dataset.retrieved_at,
+  requested_years: config.start_year..config.end_year,
   request_windows: dataset.request_windows,
+  latest_aligned_month: List.last(observations).date,
   aligned_observations: length(observations),
   unavailable_source_values: dataset.unavailable,
+  preliminary_source_values: preliminary_source_values,
+  preliminary_aligned_observations: Enum.count(observations, & &1.preliminary?),
   messages: dataset.messages
 }
 ```
@@ -72,18 +87,13 @@ make this run repeatable under the locked toolchain; they do not make the
 three-cluster choice an economic fact.
 
 ```elixir
-{:ok, analysis} =
-  MacroClustering.cluster(observations,
-    num_clusters: 3,
-    seed: 42,
-    num_runs: 20
-  )
+{:ok, analysis} = MacroClustering.cluster(observations, config.cluster_options)
 
 MacroClustering.profiles_dataframe(analysis)
 ```
 
 Read each profile only as a mean summary of months assigned to an arbitrary
-cluster ID. Do not attach names such as “stagflation” or “recession” without a
+cluster ID. Do not attach names such as "stagflation" or "recession" without a
 separate, pre-specified definition and validation design.
 
 ## VegaLite views
@@ -107,13 +117,15 @@ Before making any claim, verify all of the following:
 1. The BLS retrieval timestamp and any API messages are shown.
 2. CPI-U population coverage and the CPI/unemployment seasonal-adjustment
    difference are acknowledged.
-3. The missing October 2025 source values are shown and are not imputed.
-4. Cluster IDs remain arbitrary, and results are described as sample-specific.
-5. The selected sample, features, standardization, cluster count, seed, and
+3. The latest common aligned month and the partial 2026 coverage are shown.
+4. Unavailable and preliminary source values are shown; the missing October
+   2025 values are not imputed.
+5. Cluster IDs remain arbitrary, and results are described as sample-specific.
+6. The selected sample, features, standardization, cluster count, seed, and
    number of starts are reported.
-6. Serial correlation, overlapping 12-month CPI windows, revisions, and
+7. Serial correlation, overlapping 12-month CPI windows, revisions, and
    sensitivity to modeling choices remain explicit.
-7. No causal, recession-prediction, trading, or individualized financial claim
+8. No causal, recession-prediction, trading, or individualized financial claim
    is made.
 
 The full source and methods record is in

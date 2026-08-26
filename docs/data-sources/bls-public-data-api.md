@@ -1,6 +1,7 @@
 # BLS Public Data API source record
 
-_Verified August 16, 2026._
+_Source record first verified August 16, 2026; BLS terms and release coverage
+rechecked August 26, 2026._
 
 ## Decision
 
@@ -12,10 +13,12 @@ The first experiment retrieves two first-party U.S. Bureau of Labor Statistics
 | `CUUR0000SA0` | CPI-U, U.S. city average, all items, not seasonally adjusted, monthly | Convert the index to its 12-month percentage change |
 | `LNS14000000` | Civilian unemployment rate, seasonally adjusted, monthly | Use the published rate as a descriptive feature |
 
-The default sample is January 2006 through December 2025. The first 12 months
-are used only to calculate the CPI lag. October 2025 is unavailable for both
-selected series, leaving 227 aligned monthly observations in the August 16,
-2026 retrieval. Data is retrieved when the script or notebook runs; raw BLS
+The fixed API request boundary is the inclusive year range 2006-2026. The API
+returns only released values within that boundary; in the August 26, 2026 run,
+both selected series were available through July 2026. The first 12 months are
+used only to calculate the CPI lag. October 2025 is unavailable for both
+selected series, leaving 234 aligned monthly observations from January 2007
+through July 2026. Data is retrieved when the script or notebook runs; raw BLS
 data is not committed to this repository.
 
 ## Access and permitted use
@@ -25,10 +28,12 @@ data is not committed to this repository.
 - API signatures: <https://www.bls.gov/developers/api_signature_v2.htm>
 - Current terms: <https://www.bls.gov/developers/termsOfService.htm>
 - CPI series-code explanation: <https://www.bls.gov/cpi/factsheets/cpi-series-ids.htm>
+- July 2026 CPI release: <https://www.bls.gov/news.release/archives/cpi_08122026.htm>
+- July 2026 Employment Situation: <https://www.bls.gov/news.release/archives/empsit_08072026.htm>
 - October 2025 CPI notice: <https://www.bls.gov/cpi/additional-resources/2025-federal-government-shutdown-impact-cpi-faq.htm>
 - October 2025 CPS notice: <https://www.bls.gov/cps/methods/2025-federal-government-shutdown-impact-cps.htm>
 
-The BLS terms observed on August 16, 2026 state that data accessed through
+The BLS terms rechecked on August 26, 2026 state that data accessed through
 BLS.gov should not include controls on end use. They also require API users to
 cite the retrieval date and clearly state:
 
@@ -67,6 +72,12 @@ The terms can change and must be rechecked before a materially different use.
   and Current Population Survey notices attribute the missing source data to
   the 2025 lapse in appropriations. This experiment drops that month and does
   not impute it.
+- The July CPI and Employment Situation releases establish that July 2026 was
+  released before the August 26 run. The run found no later common month in the
+  selected API series and does not manufacture August values.
+- The August 26 API responses marked no selected source values preliminary, so
+  no derived observation was flagged preliminary. That point-in-time result
+  does not prevent later source revisions.
 - K-means is fit to standardized inflation and unemployment. It is sensitive
   to the selected years, feature definitions, number of clusters, and random
   initialization. A fixed seed and repeated starts improve reproducibility but

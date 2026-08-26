@@ -12,15 +12,17 @@ Scholar K-means, and VegaLite.
 The experiment retrieves data at runtime and commits no raw dataset, generated
 model output, or credentials.
 
-The [dated run record](docs/experiments/bls-macro-clustering.md) preserves the
-verified output and a bounded interpretation separately from the live notebook.
-The [documentation guide](docs/README.md) provides a review path through the
-ecosystem brief, source record, executed run, and sibling Python replication.
+The [latest dated run record](docs/experiments/bls-macro-clustering-2026-08-26.md)
+preserves the verified output and a bounded interpretation separately from the
+live notebook. The [documentation guide](docs/README.md) provides a review path
+through the ecosystem brief, source record, executed runs, and sibling Python
+replication.
 
 ## Research question
 
 Can K-means separate recurring combinations of observed U.S. CPI inflation and
-unemployment in a fixed 2006–2025 sample?
+unemployment in a fixed 2006-2026 request boundary, using the jointly released
+observations through July 2026?
 
 The output is descriptive and ex post. Cluster IDs are arbitrary; they are not
 objective economic regimes, causal explanations, recession predictions,
@@ -43,7 +45,7 @@ reviewed BLS terms.
 
 ## Toolchain
 
-- Supported: Elixir 1.19.x–1.20.x and Erlang/OTP 27.x–28.x.
+- Supported: Elixir 1.19.x-1.20.x and Erlang/OTP 27.x-28.x.
 - Tested Mix runtime: Elixir 1.20.2 and Erlang/OTP 27.3.4.15.
 - Tested notebook runtime: Livebook 0.19.8 with Elixir 1.19.3 and
   Erlang/OTP 28.
@@ -75,15 +77,17 @@ docker run --rm -v "$PWD:/workspace" -w /workspace \
 
 The Hex client, Rebar artifact, and container are immutable in CI. The security
 gate fails on retired Hex packages or known advisories; the repository does not
-carry advisory suppressions.
+carry advisory suppressions. The test suite also checks tracked and untracked
+repository text for printable ASCII and common non-US English spellings.
 
 ## Run the analysis
 
-The command below makes two anonymous BLS requests, records the UTC retrieval
-time, reports unavailable source values, derives the aligned monthly
-observations, fits three clusters with a fixed seed, and prints neutral cluster
-profiles. It writes no data file. The August 16, 2026 verification produced 227
-observations because BLS marks October 2025 unavailable in both source series.
+The command below makes three anonymous BLS requests, records the UTC retrieval
+time, reports unavailable and preliminary source values, derives the aligned
+monthly observations, fits three clusters with a fixed seed, and prints neutral
+cluster profiles. It writes no data file. The August 26, 2026 verification
+produced 234 observations through July 2026, retained two unavailable October
+2025 source values without imputation, and found no values marked preliminary.
 
 ```bash
 mix run scripts/run_bls_macro_clustering.exs
@@ -127,18 +131,18 @@ redistributed.
 
 ## Repository contents
 
-- `lib/` — BLS retrieval, transformations, clustering, and chart builders.
-- `test/` — synthetic BLS-shaped fixtures and deterministic tests.
-- `notebooks/bls_macro_clustering.livemd` — documented interactive analysis.
-- `scripts/run_bls_macro_clustering.exs` — non-notebook execution path.
-- `scripts/verify_livebook_runtime.exs` — standalone path/lock/chart check.
-- `docs/data-sources/` — source, terms, provenance, and claim boundaries.
-- `docs/experiments/` — dated run records and bounded interpretations.
-- `docs/README.md` — documentation map and cross-language replication boundary.
-- `README.md` — setup, validation, execution, and scope.
-- `AGENTS.md` — repository-local contributor guidance.
-- `docs/elixir-data-science-ecosystem.md` — dated ecosystem research brief.
-- `LICENSE` — license for repository-authored material.
+- `lib/`: BLS retrieval, transformations, clustering, and chart builders.
+- `test/`: synthetic BLS-shaped fixtures and deterministic tests.
+- `notebooks/bls_macro_clustering.livemd`: documented interactive analysis.
+- `scripts/run_bls_macro_clustering.exs`: non-notebook execution path.
+- `scripts/verify_livebook_runtime.exs`: standalone path/lock/chart check.
+- `docs/data-sources/`: source, terms, provenance, and claim boundaries.
+- `docs/experiments/`: dated run records and bounded interpretations.
+- `docs/README.md`: documentation map and cross-language replication boundary.
+- `README.md`: setup, validation, execution, and scope.
+- `AGENTS.md`: repository-local contributor guidance.
+- `docs/elixir-data-science-ecosystem.md`: dated ecosystem research brief.
+- `LICENSE`: license for repository-authored material.
 
 ## License
 

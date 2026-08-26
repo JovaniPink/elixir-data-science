@@ -2,9 +2,15 @@ defmodule ElixirDataScience.Charts do
   @moduledoc "Vega-Lite chart specifications for the BLS macro experiment."
 
   alias VegaLite, as: Vl
+  alias ElixirDataScience.MacroClustering
+
+  @type chart_observation ::
+          MacroClustering.observation() | MacroClustering.labeled_observation()
+
+  @type chart_row :: %{required(String.t()) => String.t() | float()}
 
   @doc "Builds vertically aligned inflation and unemployment time-series views."
-  @spec timeline([map()]) :: VegaLite.t()
+  @spec timeline([chart_observation()]) :: VegaLite.t()
   def timeline(observations) do
     data = chart_rows(observations)
 
@@ -32,7 +38,7 @@ defmodule ElixirDataScience.Charts do
   end
 
   @doc "Builds a scatterplot of the two standardized clustering inputs."
-  @spec scatter([map()]) :: VegaLite.t()
+  @spec scatter([chart_observation()]) :: VegaLite.t()
   def scatter(observations) do
     observations
     |> chart_rows()
@@ -67,6 +73,7 @@ defmodule ElixirDataScience.Charts do
     end)
   end
 
+  @spec chart_rows([chart_observation()]) :: [chart_row()]
   defp chart_rows(observations) do
     Enum.map(observations, fn observation ->
       %{
