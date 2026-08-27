@@ -24,6 +24,7 @@ defmodule ElixirDataScience.BLSConformanceReport do
           | {:source_configuration_mismatch, map()}
           | {:analysis_configuration_mismatch, map()}
           | :analysis_observations_mismatch
+          | {:analysis_standardization_mismatch, map()}
           | {:invalid_cluster_labels, [term()]}
 
   @doc "Builds a versioned comparison report from one fetched and clustered dataset."
@@ -34,6 +35,7 @@ defmodule ElixirDataScience.BLSConformanceReport do
          :ok <- validate_source(dataset),
          :ok <- validate_analysis_configuration(analysis, config),
          :ok <- validate_observations(dataset, analysis),
+         :ok <- validate_standardization(analysis),
          :ok <- validate_cluster_labels(analysis) do
       {:ok, build_report(dataset, analysis, config)}
     end
@@ -134,6 +136,41 @@ defmodule ElixirDataScience.BLSConformanceReport do
       end)
 
     if actual == expected, do: :ok, else: {:error, :analysis_observations_mismatch}
+  end
+
+  defp validate_standardization(analysis) do
+    expected = %{
+      inflation_yoy:
+        analysis.observations
+        |> Enum.map(& &1.inflation_yoy)
+        |> standardization_summary(),
+      unemployment_rate:
+        analysis.observations
+        |> Enum.map(& &1.unemployment_rate)
+        |> standardization_summary()
+    }
+
+    if analysis.standardization == expected do
+      :ok
+    else
+      {:error,
+       {:analysis_standardization_mismatch,
+        %{
+          actual: analysis.standardization,
+          expected: expected
+        }}}
+    end
+  end
+
+  defp standardization_summary(values) do
+    avg = mean(values)
+
+    variance =
+      values
+      |> Enum.reduce(0.0, fn value, sum -> sum + :math.pow(value - avg, 2) end)
+      |> Kernel./(length(values))
+
+    %{mean: avg, std: :math.sqrt(variance)}
   end
 
   defp validate_cluster_labels(analysis) do
