@@ -26,6 +26,7 @@ defmodule ElixirDataScience.MixProject do
       {:explorer, "~> 0.12.0"},
       {:scholar, "~> 0.4.2"},
       {:req, "~> 0.7.2"},
+      {:jason, "~> 1.4"},
       {:vega_lite, "~> 0.1.11"},
       {:kino_vega_lite, "~> 0.1.13", only: :dev}
     ]
