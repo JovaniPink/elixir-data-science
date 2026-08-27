@@ -227,8 +227,10 @@ defmodule ElixirDataScience.BLSConformanceReportTest do
 
     assert {_, 0} =
              System.cmd("git", [
+               "-c",
+               "safe.directory=#{File.cwd!()}",
                "check-ignore",
-               "artifacts/bls-macro-conformance.json"
+               "artifacts/bls-macro-conformance/v1/bls-macro-conformance.v1.json"
              ])
   end
 
