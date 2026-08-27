@@ -14,6 +14,7 @@ running the Elixir project.
 | Match the QCEW experiment in Python | [QCEW Elixir-Python comparison contract](experiments/qcew-comparison.md) | Generated artifacts, manifest fields, benchmark scope, state labels, and a byte-matching checklist |
 | Review the latest observed result | [BLS macro clustering run record: August 26, 2026](experiments/bls-macro-clustering-2026-08-26.md) | The exact executed configuration through July 2026, observed profiles, unavailable and preliminary values, and bounded interpretation |
 | Review the prior observed result | [BLS macro clustering run record: August 16, 2026](experiments/bls-macro-clustering.md) | The preserved 2006-2025 run before the 2026 sample extension |
+| Compare Elixir and Python runtime results | [BLS conformance report contract](experiments/bls-conformance-report.md) | The generated JSON schema, exact and tolerance-based fields, label-independent profile matching, and artifact boundary |
 | Reproduce interactively | [BLS macro clustering Livebook](../notebooks/bls_macro_clustering.livemd) | The executable notebook backed by the repository lockfile |
 
 The root [README](../README.md) remains the operational entry point for setup,
@@ -28,20 +29,22 @@ scikit-learn, Vega-Altair, and marimo. Its
 [documentation guide](https://github.com/JovaniPink/python-data-science/blob/main/docs/README.md)
 links the Python research, source, and run records.
 
-The two implementations intentionally share a January 2006 through December
-2025 base sample:
+The implementations share the following analytical contract:
 
 - first-party BLS series `CUUR0000SA0` and `LNS14000000`;
 - 12-month CPI-U change and unemployment-rate level as features;
 - explicit exclusion, without imputation, of unavailable October 2025 data;
-- population standardization, three K-means clusters, seed 42, and 20 starts;
+- population standardization, three K-means clusters, K-means++ initialization,
+  seed 42, 20 starts, 300 maximum iterations, and tolerance `1.0e-4`;
 - neutral profile reporting and the same non-causal, non-predictive claim
   boundary.
 
-The August 26, 2026 Elixir run extends its fixed API request end year to 2026
-and includes the jointly released observations through July. The linked Python
-run remains the preserved 2006-2025 comparison, so the latest Elixir profiles
-are not presented as a current cross-language replication.
+The preserved Python run linked above still covers 2006-2025 and is not current
+replication evidence for the 2006-2026 Elixir configuration. The new runtime
+[conformance report](experiments/bls-conformance-report.md) gives the sibling
+Python experiment a versioned contract for independently generating and
+comparing the current request, coverage, handling, transformation, clustering,
+and descriptive-output evidence without sharing code or committed data.
 
 They do not share runtime code, dataframe libraries, clustering
 implementations, or notebook systems. Agreement of the observed profile groups

@@ -1,4 +1,5 @@
 project_path = Path.expand("..", __DIR__)
+livebook_path = Path.join(project_path, "notebooks/bls_macro_clustering.livemd")
 
 Mix.install(
   [{:elixir_data_science, path: project_path, env: :dev}],
@@ -25,10 +26,13 @@ observations = [
 dataframe = MacroClustering.to_dataframe(analysis)
 timeline = analysis.observations |> Charts.timeline() |> Kino.VegaLite.new()
 scatter = analysis.observations |> Charts.scatter() |> Kino.VegaLite.new()
+livebook = File.read!(livebook_path)
 
 unless Explorer.DataFrame.n_rows(dataframe) == 6 and
          is_map(timeline) and Map.has_key?(timeline, :__struct__) and
-         is_map(scatter) and Map.has_key?(scatter, :__struct__) do
+         is_map(scatter) and Map.has_key?(scatter, :__struct__) and
+         String.contains?(livebook, "BLSConformanceReport.build(dataset, analysis, config)") and
+         String.contains?(livebook, "bls-conformance-report.md") do
   raise "Livebook runtime verification failed"
 end
 

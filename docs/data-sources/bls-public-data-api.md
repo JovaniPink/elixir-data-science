@@ -80,13 +80,21 @@ The terms can change and must be rechecked before a materially different use.
   does not prevent later source revisions.
 - K-means is fit to standardized inflation and unemployment. It is sensitive
   to the selected years, feature definitions, number of clusters, and random
-  initialization. A fixed seed and repeated starts improve reproducibility but
-  do not turn clusters into objective economic regimes.
+  initialization. The experiment explicitly fixes K-means++ initialization,
+  three clusters, seed 42, 20 starts, 300 maximum iterations, and tolerance
+  `1.0e-4`. Those settings improve reproducibility but do not turn clusters
+  into objective economic regimes.
 - Monthly observations overlap in their 12-month CPI windows and are serially
   correlated. The experiment does not treat them as independent evidence.
 - Cluster IDs are arbitrary. The output is an ex-post description of the
   selected sample, not causal inference, a recession classifier, a forecast,
   a trading signal, or financial advice.
+
+The runtime [conformance report contract](../experiments/bls-conformance-report.md)
+exposes these source, transformation, handling, and modeling decisions for an
+independent sibling implementation. Generated reports are written under the
+Git-ignored `artifacts/` directory and do not contain available monthly source
+values or raw BLS responses.
 
 ## Why FRED is not the model-training source
 

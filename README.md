@@ -94,14 +94,42 @@ repository text for printable ASCII and common non-US English spellings.
 
 The command below makes three anonymous BLS requests, records the UTC retrieval
 time, reports unavailable and preliminary source values, derives the aligned
-monthly observations, fits three clusters with a fixed seed, and prints neutral
-cluster profiles. It writes no data file. The August 26, 2026 verification
-produced 234 observations through July 2026, retained two unavailable October
-2025 source values without imputation, and found no values marked preliminary.
+monthly observations, fits three clusters with fixed K-means++ initialization
+settings, and prints neutral cluster profiles. It writes no data file. The
+August 26, 2026 verification produced 234 observations through July 2026,
+retained two unavailable October 2025 source values without imputation, and
+found no values marked preliminary.
 
 ```bash
 mix run scripts/run_bls_macro_clustering.exs
 ```
+
+## Generate a cross-language conformance report
+
+Generate the comparison-ready JSON report from a fresh BLS retrieval and model
+run:
+
+```bash
+mix run scripts/generate_bls_conformance_report.exs
+```
+
+The command writes `artifacts/bls-macro-conformance.json`. The entire
+`artifacts/` directory is ignored by Git. The report contains no raw API
+response or available monthly source values. It records the exact request
+windows, aligned month list, unavailable and preliminary metadata and policies,
+feature and population-standardization definitions, explicit K-means settings,
+and label-independent descriptive profiles with assigned months.
+
+The sibling Python experiment should parse its independently generated report
+and follow the embedded comparison rules. Request, source, month, handling,
+feature, model-setting, and assigned-month fields compare exactly. Profile and
+standardization numbers compare with the report's `1.0e-6` absolute tolerance.
+Producer metadata, retrieval time, implementation labels, iteration count, and
+inertia are informational because the runtimes and cluster IDs differ. See the
+[conformance report contract](docs/experiments/bls-conformance-report.md).
+
+Use `--output PATH` to select another generated location. Do not add a report,
+raw response, dataset, or export to Git.
 
 ## Run the QCEW comparison
 
@@ -171,6 +199,7 @@ redistributed.
   tests.
 - `notebooks/bls_macro_clustering.livemd`: documented interactive analysis.
 - `scripts/run_bls_macro_clustering.exs`: non-notebook execution path.
+- `scripts/generate_bls_conformance_report.exs`: ignored runtime JSON report.
 - `scripts/run_qcew_comparison.exs`: QCEW source, grouping, measurement, and
   manifest execution path.
 - `scripts/verify_livebook_runtime.exs`: standalone path/lock/chart check.

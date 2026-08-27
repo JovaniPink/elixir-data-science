@@ -7,7 +7,14 @@ defmodule ElixirDataScience.MacroClusteringTest do
     assert BLSMacroExperiment.configuration() == %{
              start_year: 2006,
              end_year: 2026,
-             cluster_options: [num_clusters: 3, seed: 42, num_runs: 20]
+             cluster_options: [
+               num_clusters: 3,
+               seed: 42,
+               num_runs: 20,
+               init: :k_means_plus_plus,
+               max_iterations: 300,
+               tolerance: 1.0e-4
+             ]
            }
   end
 
@@ -76,6 +83,10 @@ defmodule ElixirDataScience.MacroClusteringTest do
     assert Enum.map(first.observations, & &1.cluster) ==
              Enum.map(second.observations, & &1.cluster)
 
+    assert first.num_clusters == 3
+    assert first.init == :k_means_plus_plus
+    assert first.max_iterations == 300
+    assert first.tolerance == 1.0e-4
     assert length(first.profiles) == 3
     assert Enum.sum(Enum.map(first.profiles, & &1.months)) == length(observations)
     assert Explorer.DataFrame.n_rows(MacroClustering.to_dataframe(first)) == 60

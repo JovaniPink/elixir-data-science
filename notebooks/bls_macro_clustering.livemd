@@ -24,7 +24,13 @@ Mix.install(
 ```
 
 ```elixir
-alias ElixirDataScience.{BLS, BLSMacroExperiment, Charts, MacroClustering}
+alias ElixirDataScience.{
+  BLS,
+  BLSConformanceReport,
+  BLSMacroExperiment,
+  Charts,
+  MacroClustering
+}
 
 Nx.global_default_backend(EXLA.Backend)
 Nx.Defn.global_default_options(compiler: EXLA, client: :host)
@@ -82,9 +88,10 @@ observations
 
 ## Fit descriptive K-means
 
-Both features are standardized before fitting. The fixed seed and 20 starts
-make this run repeatable under the locked toolchain; they do not make the
-three-cluster choice an economic fact.
+Both features are standardized before fitting. K-means++ initialization, three
+clusters, seed 42, 20 starts, 300 maximum iterations, and tolerance `1.0e-4`
+are explicit. They make the settings repeatable under the locked toolchain;
+they do not make the three-cluster choice an economic fact.
 
 ```elixir
 {:ok, analysis} = MacroClustering.cluster(observations, config.cluster_options)
@@ -95,6 +102,23 @@ MacroClustering.profiles_dataframe(analysis)
 Read each profile only as a mean summary of months assigned to an arbitrary
 cluster ID. Do not attach names such as "stagflation" or "recession" without a
 separate, pre-specified definition and validation design.
+
+## Build the cross-language conformance report
+
+This in-memory report is the same versioned contract produced by the CLI
+generator. It contains exact aligned months and label-independent profile
+assignments, but no raw API response or available monthly source values.
+
+```elixir
+{:ok, conformance_report} =
+  BLSConformanceReport.build(dataset, analysis, config)
+
+conformance_report
+```
+
+For file-based comparison with the sibling Python experiment, run
+`mix run scripts/generate_bls_conformance_report.exs` from the repository root.
+The generated JSON goes to the Git-ignored `artifacts/` directory by default.
 
 ## VegaLite views
 
@@ -122,7 +146,8 @@ Before making any claim, verify all of the following:
    2025 values are not imputed.
 5. Cluster IDs remain arbitrary, and results are described as sample-specific.
 6. The selected sample, features, standardization, cluster count, seed, and
-   number of starts are reported.
+   number of starts, initialization, iteration limit, and tolerance are
+   reported.
 7. Serial correlation, overlapping 12-month CPI windows, revisions, and
    sensitivity to modeling choices remain explicit.
 8. No causal, recession-prediction, trading, or individualized financial claim
@@ -130,3 +155,5 @@ Before making any claim, verify all of the following:
 
 The full source and methods record is in
 [`docs/data-sources/bls-public-data-api.md`](../docs/data-sources/bls-public-data-api.md).
+The portable comparison procedure is in
+[`docs/experiments/bls-conformance-report.md`](../docs/experiments/bls-conformance-report.md).
