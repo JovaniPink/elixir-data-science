@@ -172,6 +172,26 @@ defmodule ElixirDataScience.BLSConformanceReportTest do
     assert details.actual_profiles != details.expected_profiles
   end
 
+  test "rejects stale standardization summaries", %{
+    analysis: analysis,
+    config: config,
+    dataset: dataset
+  } do
+    for {feature, field} <- [
+          {:inflation_yoy, :mean},
+          {:unemployment_rate, :std}
+        ] do
+      stale_analysis =
+        update_in(analysis, [:standardization, feature, field], &(&1 + 1.0))
+
+      assert {:error, {:analysis_standardization_mismatch, details}} =
+               BLSConformanceReport.build(dataset, stale_analysis, config)
+
+      assert details.actual == stale_analysis.standardization
+      assert details.expected == analysis.standardization
+    end
+  end
+
   test "writes only to an explicitly generated ignored artifact", %{
     analysis: analysis,
     config: config,

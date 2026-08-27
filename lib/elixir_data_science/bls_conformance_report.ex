@@ -16,6 +16,7 @@ defmodule ElixirDataScience.BLSConformanceReport do
           {:request_configuration_mismatch, map()}
           | {:source_series_mismatch, map()}
           | {:analysis_observation_mismatch, map()}
+          | {:analysis_standardization_mismatch, map()}
           | {:analysis_profile_mismatch, map()}
           | {:clustering_configuration_mismatch, map()}
 
@@ -30,6 +31,7 @@ defmodule ElixirDataScience.BLSConformanceReport do
     with :ok <- validate_request(dataset, config),
          :ok <- validate_series(dataset),
          :ok <- validate_analysis(dataset, analysis),
+         :ok <- validate_standardization(analysis),
          :ok <- validate_profiles(analysis),
          :ok <- validate_clustering(analysis, config) do
       {:ok, report(dataset, analysis, config)}
@@ -319,6 +321,21 @@ defmodule ElixirDataScience.BLSConformanceReport do
     end
   end
 
+  defp validate_standardization(analysis) do
+    expected = expected_standardization(analysis.observations)
+
+    if analysis.standardization == expected do
+      :ok
+    else
+      {:error,
+       {:analysis_standardization_mismatch,
+        %{
+          actual: analysis.standardization,
+          expected: expected
+        }}}
+    end
+  end
+
   defp validate_profiles(analysis) do
     expected_profiles = expected_profiles(analysis.observations)
 
@@ -351,6 +368,30 @@ defmodule ElixirDataScience.BLSConformanceReport do
       }
     end)
     |> Enum.sort_by(& &1.cluster)
+  end
+
+  defp expected_standardization(observations) do
+    %{
+      inflation_yoy:
+        observations
+        |> Enum.map(& &1.inflation_yoy)
+        |> feature_statistics(),
+      unemployment_rate:
+        observations
+        |> Enum.map(& &1.unemployment_rate)
+        |> feature_statistics()
+    }
+  end
+
+  defp feature_statistics(values) do
+    avg = mean(values)
+
+    variance =
+      values
+      |> Enum.reduce(0.0, fn value, sum -> sum + :math.pow(value - avg, 2) end)
+      |> Kernel./(length(values))
+
+    %{mean: avg, std: :math.sqrt(variance)}
   end
 
   defp cluster_settings(options) do
