@@ -25,6 +25,7 @@ defmodule ElixirDataScience.BLSTest do
 
     assert {:ok, dataset} = BLS.fetch(2006, 2025, request_fun: request_fun)
     assert dataset.request_windows == [{2006, 2015}, {2016, 2025}]
+    assert dataset.request_mode == :anonymous
     assert dataset.source_url == BLS.endpoint()
     assert map_size(dataset.series) == 2
     assert dataset.unavailable == %{"CUUR0000SA0" => [], "LNS14000000" => []}
@@ -71,6 +72,24 @@ defmodule ElixirDataScience.BLSTest do
                footnotes: ["Data unavailable due to the 2025 lapse in appropriations."]
              }
            ]
+  end
+
+  test "records registered request mode when a registration key is supplied" do
+    parent = self()
+
+    request_fun = fn payload ->
+      send(parent, {:registered_payload, payload})
+      {:ok, BLSFixture.response(2026, 2026)}
+    end
+
+    assert {:ok, dataset} =
+             BLS.fetch(2026, 2026,
+               registration_key: "test-registration-key",
+               request_fun: request_fun
+             )
+
+    assert dataset.request_mode == :registered
+    assert_received {:registered_payload, %{"registrationkey" => "test-registration-key"}}
   end
 
   test "marks preliminary monthly source values from BLS footnotes" do

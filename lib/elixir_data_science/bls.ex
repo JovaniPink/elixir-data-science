@@ -30,6 +30,7 @@ defmodule ElixirDataScience.BLS do
           retrieved_at: DateTime.t(),
           start_year: pos_integer(),
           end_year: pos_integer(),
+          request_mode: :anonymous | :registered,
           request_windows: [{pos_integer(), pos_integer()}],
           series: %{required(series_id()) => [point()]},
           unavailable: %{required(series_id()) => [unavailable_point()]},
@@ -72,6 +73,7 @@ defmodule ElixirDataScience.BLS do
     with :ok <- validate_years(start_year, end_year) do
       request_fun = Keyword.get(opts, :request_fun, &request/1)
       registration_key = Keyword.get(opts, :registration_key)
+      request_mode = request_mode(registration_key)
       windows = year_windows(start_year, end_year)
 
       windows
@@ -97,6 +99,7 @@ defmodule ElixirDataScience.BLS do
              retrieved_at: DateTime.utc_now() |> DateTime.truncate(:second),
              start_year: start_year,
              end_year: end_year,
+             request_mode: request_mode,
              request_windows: windows,
              series: series,
              unavailable: unavailable,
@@ -167,6 +170,9 @@ defmodule ElixirDataScience.BLS do
     do: Map.put(payload, "registrationkey", key)
 
   defp maybe_put_registration_key(payload, _key), do: payload
+
+  defp request_mode(key) when is_binary(key) and key != "", do: :registered
+  defp request_mode(_key), do: :anonymous
 
   defp result_series(%{"Results" => %{"series" => series}}) when is_list(series),
     do: {:ok, series}

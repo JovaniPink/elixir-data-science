@@ -24,6 +24,10 @@ live notebook. The [documentation guide](docs/README.md) provides a review path
 through the ecosystem brief, source record, executed runs, and sibling Python
 replication.
 
+The BLS macro runner also writes an ignored, versioned
+[conformance report](docs/experiments/bls-macro-conformance.md) for
+label-independent comparison with another implementation.
+
 ## Research question
 
 Can K-means separate recurring combinations of observed U.S. CPI inflation and

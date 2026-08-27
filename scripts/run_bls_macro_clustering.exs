@@ -1,13 +1,16 @@
-alias ElixirDataScience.{BLS, BLSMacroExperiment, MacroClustering}
+alias ElixirDataScience.{BLS, BLSConformanceReport, BLSMacroExperiment, MacroClustering}
 
 Nx.global_default_backend(EXLA.Backend)
 Nx.Defn.global_default_options(compiler: EXLA, client: :host)
 
 config = BLSMacroExperiment.configuration()
+report_path = "artifacts/bls-macro-conformance/v1/bls-macro-conformance.v1.json"
 
 with {:ok, dataset} <- BLS.fetch(config.start_year, config.end_year),
      observations <- MacroClustering.observations(dataset),
-     {:ok, analysis} <- MacroClustering.cluster(observations, config.cluster_options) do
+     {:ok, analysis} <- MacroClustering.cluster(observations, config.cluster_options),
+     {:ok, report} <- BLSConformanceReport.build(dataset, analysis, config),
+     :ok <- BLSConformanceReport.write(report, report_path) do
   unavailable_points =
     dataset.unavailable
     |> Enum.flat_map(fn {series_id, points} ->
@@ -31,6 +34,7 @@ with {:ok, dataset} <- BLS.fetch(config.start_year, config.end_year),
   IO.puts("Preliminary aligned observations: #{Enum.count(observations, & &1.preliminary?)}")
   IO.puts("Inertia: #{Float.round(analysis.inertia, 4)}")
   IO.puts("API messages: #{length(dataset.messages)}")
+  IO.puts("Conformance report: #{report_path}")
 
   Enum.each(dataset.messages, &IO.puts("API message: #{&1}"))
 

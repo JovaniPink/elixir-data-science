@@ -78,10 +78,12 @@ The terms can change and must be rechecked before a materially different use.
 - The August 26 API responses marked no selected source values preliminary, so
   no derived observation was flagged preliminary. That point-in-time result
   does not prevent later source revisions.
-- K-means is fit to standardized inflation and unemployment. It is sensitive
-  to the selected years, feature definitions, number of clusters, and random
-  initialization. A fixed seed and repeated starts improve reproducibility but
-  do not turn clusters into objective economic regimes.
+- K-means is fit to standardized inflation and unemployment with explicit
+  K-means++ initialization, a seed of 42, 20 starts, a maximum of 300
+  iterations, and a convergence tolerance of `1.0e-4`. It is sensitive to the
+  selected years, feature definitions, number of clusters, and initialization.
+  Fixed settings improve reproducibility but do not turn clusters into
+  objective economic regimes.
 - Monthly observations overlap in their 12-month CPI windows and are serially
   correlated. The experiment does not treat them as independent evidence.
 - Cluster IDs are arbitrary. The output is an ex-post description of the
