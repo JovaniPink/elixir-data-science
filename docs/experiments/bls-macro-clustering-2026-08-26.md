@@ -25,7 +25,7 @@ forecast future data, or produce a trading or financial-advice signal.
 | Derived observation period | January 2007-July 2026 |
 | Derived features | 12-month CPI-U change, unemployment-rate level |
 | Standardization | Population mean and standard deviation per feature |
-| K-means configuration | 3 clusters, seed 42, 20 starts |
+| K-means configuration | 3 clusters, K-means++ initialization, seed 42, 20 starts, maximum 300 iterations, tolerance `1.0e-4` |
 | Aligned observations | 234 months |
 | Unavailable source values | 2, both for October 2025; retained and not imputed |
 | Preliminary source values | 0 |

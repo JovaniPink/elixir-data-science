@@ -13,6 +13,7 @@ running the Elixir project.
 | Review the QCEW source boundary | [BLS QCEW Open Data source record](data-sources/bls-qcew-open-data.md) | Fixed slice, public-domain status, BLS terms, permitted use, exact grouping contract, and claim limits |
 | Match the QCEW experiment in Python | [QCEW Elixir-Python comparison contract](experiments/qcew-comparison.md) | Generated artifacts, manifest fields, benchmark scope, state labels, and a byte-matching checklist |
 | Review the latest observed result | [BLS macro clustering run record: August 26, 2026](experiments/bls-macro-clustering-2026-08-26.md) | The exact executed configuration through July 2026, observed profiles, unavailable and preliminary values, and bounded interpretation |
+| Match the BLS macro output by meaning | [BLS macro conformance report](experiments/bls-macro-conformance.md) | Versioned JSON fields, label-independent profiles, comparison tolerance, and generated path |
 | Review the prior observed result | [BLS macro clustering run record: August 16, 2026](experiments/bls-macro-clustering.md) | The preserved 2006-2025 run before the 2026 sample extension |
 | Reproduce interactively | [BLS macro clustering Livebook](../notebooks/bls_macro_clustering.livemd) | The executable notebook backed by the repository lockfile |
 

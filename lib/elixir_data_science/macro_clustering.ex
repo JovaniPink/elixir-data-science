@@ -31,6 +31,9 @@ defmodule ElixirDataScience.MacroClustering do
           {:num_clusters, pos_integer()}
           | {:seed, integer()}
           | {:num_runs, pos_integer()}
+          | {:init, :k_means_plus_plus | :random}
+          | {:max_iterations, pos_integer()}
+          | {:tolerance, float()}
 
   @type feature_summary :: %{mean: float(), std: float()}
 
@@ -59,8 +62,12 @@ defmodule ElixirDataScience.MacroClustering do
           observations: [labeled_observation()],
           profiles: [cluster_profile()],
           standardization: standardization(),
+          num_clusters: pos_integer(),
           seed: integer(),
           num_runs: pos_integer(),
+          init: :k_means_plus_plus | :random,
+          max_iterations: pos_integer(),
+          tolerance: float(),
           inertia: float(),
           num_iterations: non_neg_integer(),
           model: kmeans_model()
@@ -112,6 +119,9 @@ defmodule ElixirDataScience.MacroClustering do
     * `:num_clusters` - defaults to 3
     * `:seed` - defaults to 42
     * `:num_runs` - defaults to 20
+    * `:init` - defaults to `:k_means_plus_plus`
+    * `:max_iterations` - defaults to 300
+    * `:tolerance` - defaults to `1.0e-4`
 
   """
   @spec cluster([observation()], [cluster_option()]) ::
@@ -120,8 +130,20 @@ defmodule ElixirDataScience.MacroClustering do
     num_clusters = Keyword.get(opts, :num_clusters, 3)
     seed = Keyword.get(opts, :seed, 42)
     num_runs = Keyword.get(opts, :num_runs, 20)
+    init = Keyword.get(opts, :init, :k_means_plus_plus)
+    max_iterations = Keyword.get(opts, :max_iterations, 300)
+    tolerance = Keyword.get(opts, :tolerance, 1.0e-4)
 
-    with :ok <- validate_cluster_request(observations, num_clusters),
+    with :ok <-
+           validate_cluster_request(
+             observations,
+             num_clusters,
+             seed,
+             num_runs,
+             init,
+             max_iterations,
+             tolerance
+           ),
          {:ok, standardized, standardization} <- standardize(observations) do
       tensor = Nx.tensor(standardized, type: :f32)
 
@@ -129,6 +151,9 @@ defmodule ElixirDataScience.MacroClustering do
         KMeans.fit(tensor,
           num_clusters: num_clusters,
           num_runs: num_runs,
+          init: init,
+          max_iterations: max_iterations,
+          tol: tolerance,
           key: Nx.Random.key(seed)
         )
 
@@ -144,8 +169,12 @@ defmodule ElixirDataScience.MacroClustering do
          observations: labeled_observations,
          profiles: cluster_profiles(labeled_observations),
          standardization: standardization,
+         num_clusters: num_clusters,
          seed: seed,
          num_runs: num_runs,
+         init: init,
+         max_iterations: max_iterations,
+         tolerance: tolerance,
          inertia: Nx.to_number(model.inertia),
          num_iterations: Nx.to_number(model.num_iterations),
          model: model
@@ -215,12 +244,23 @@ defmodule ElixirDataScience.MacroClustering do
     |> Enum.sort_by(& &1.cluster)
   end
 
-  defp validate_cluster_request(observations, num_clusters)
+  defp validate_cluster_request(
+         observations,
+         num_clusters,
+         seed,
+         num_runs,
+         init,
+         max_iterations,
+         tolerance
+       )
        when is_integer(num_clusters) and num_clusters > 1 and
-              length(observations) >= num_clusters,
+              length(observations) >= num_clusters and is_integer(seed) and
+              is_integer(num_runs) and num_runs > 0 and
+              init in [:k_means_plus_plus, :random] and is_integer(max_iterations) and
+              max_iterations > 0 and is_float(tolerance) and tolerance > 0.0,
        do: :ok
 
-  defp validate_cluster_request(observations, num_clusters),
+  defp validate_cluster_request(observations, num_clusters, _seed, _num_runs, _init, _max, _tol),
     do: {:error, {:invalid_cluster_request, length(observations), num_clusters}}
 
   defp transpose(rows), do: rows |> Enum.zip() |> Enum.map(&Tuple.to_list/1)
