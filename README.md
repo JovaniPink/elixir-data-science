@@ -5,12 +5,18 @@ intersection of Elixir and data science.
 
 ## Current status
 
-The first focused experiment is implemented: a Livebook-first exploration of
-monthly U.S. inflation and unemployment using first-party BLS data, Explorer,
-Scholar K-means, and VegaLite.
+Two focused experiments are implemented: a Livebook-first exploration of
+monthly U.S. inflation and unemployment, and a bounded QCEW download and
+grouping pipeline designed for later byte-level comparison with Python. Both
+use first-party BLS data. The QCEW experiment uses Explorer but does not fit a
+model.
 
-The experiment retrieves data at runtime and commits no raw dataset, generated
+The experiments retrieve data at runtime and commit no raw dataset, generated
 model output, or credentials.
+
+The QCEW source CSV, its hash sidecar, grouped output, and versioned result
+manifest are also generated only in the ignored `data/` and `artifacts/`
+directories.
 
 The [latest dated run record](docs/experiments/bls-macro-clustering-2026-08-26.md)
 preserves the verified output and a bounded interpretation separately from the
@@ -46,11 +52,15 @@ reviewed BLS terms.
 ## Toolchain
 
 - Supported: Elixir 1.19.x-1.20.x and Erlang/OTP 27.x-28.x.
-- Tested Mix runtime: Elixir 1.20.2 and Erlang/OTP 27.3.4.15.
+- Tested CI runtimes: Elixir 1.20.2 with Erlang/OTP 27 and Elixir 1.19.5 with
+  Erlang/OTP 28.
 - Tested notebook runtime: Livebook 0.19.8 with Elixir 1.19.3 and
   Erlang/OTP 28.
-- CI container: `elixir:1.20.2-otp-27` pinned to digest
-  `sha256:998bb64cb24209d959eb48af9bac1a087f4b5b4d32e91f6e67d666659af04bcd`.
+- CI containers:
+  - `elixir:1.20.2-otp-27` at
+    `sha256:998bb64cb24209d959eb48af9bac1a087f4b5b4d32e91f6e67d666659af04bcd`.
+  - `elixir:1.19.5-otp-28` at
+    `sha256:4eda86b01d2a3448aef341a60ba962a584ed330e33ce526a70b1b6d90ede6e41`.
 
 The exact local asdf versions are recorded in `.tool-versions`; dependency
 versions are committed in `mix.lock`.
@@ -93,6 +103,30 @@ produced 234 observations through July 2026, retained two unavailable October
 mix run scripts/run_bls_macro_clustering.exs
 ```
 
+## Run the QCEW comparison
+
+The QCEW command downloads the fixed first-quarter 2024 all-industries slice,
+verifies or creates its source sidecar, selects published county total-covered
+rows, groups integer measures by state FIPS, and writes a canonical CSV plus a
+version 1 JSON manifest. It performs five timed transforms by default and
+records sampled peak RSS, BEAM-managed memory, hardware, runtime, and narrowly
+defined cold/warm state metadata.
+
+```bash
+mix run scripts/run_qcew_comparison.exs
+```
+
+See the [QCEW source record](docs/data-sources/bls-qcew-open-data.md) for source,
+public-domain status, BLS terms, permitted use, retrieval behavior, fields, and
+claim boundaries. The
+[cross-language comparison contract](docs/experiments/qcew-comparison.md)
+defines exact output bytes, measurement scope, generated paths, and the Python
+matching checklist.
+
+This output is a deterministic engineering comparison artifact. It is not a
+causal explanation, forecast, recession indicator, trading signal, or financial
+advice.
+
 ## Open the Livebook
 
 Open [`notebooks/bls_macro_clustering.livemd`](notebooks/bls_macro_clustering.livemd)
@@ -131,10 +165,14 @@ redistributed.
 
 ## Repository contents
 
-- `lib/`: BLS retrieval, transformations, clustering, and chart builders.
-- `test/`: synthetic BLS-shaped fixtures and deterministic tests.
+- `lib/`: BLS retrieval, transformations, clustering, QCEW grouping, and
+  measurement support.
+- `test/`: synthetic BLS-shaped and QCEW-shaped fixtures and deterministic
+  tests.
 - `notebooks/bls_macro_clustering.livemd`: documented interactive analysis.
 - `scripts/run_bls_macro_clustering.exs`: non-notebook execution path.
+- `scripts/run_qcew_comparison.exs`: QCEW source, grouping, measurement, and
+  manifest execution path.
 - `scripts/verify_livebook_runtime.exs`: standalone path/lock/chart check.
 - `docs/data-sources/`: source, terms, provenance, and claim boundaries.
 - `docs/experiments/`: dated run records and bounded interpretations.
