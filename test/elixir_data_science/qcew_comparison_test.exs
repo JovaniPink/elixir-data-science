@@ -32,6 +32,11 @@ defmodule ElixirDataScience.QCEWComparisonTest do
              }
 
       assert config.grouping_key == "first two characters of area_fips"
+
+      assert QCEWComparison.default_artifact_paths() == %{
+               result_path: "artifacts/qcew-comparison/v1/qcew-state-totals.v1.csv",
+               manifest_path: "artifacts/qcew-comparison/v1/qcew-comparison-manifest.v1.json"
+             }
     end
   end
 
