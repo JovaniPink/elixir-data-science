@@ -83,6 +83,32 @@ defmodule ElixirDataScience.QCEWComparison do
 
   @type manifest :: %{required(String.t()) => json_value()}
 
+  @type string_contract :: %{required(String.t()) => String.t()}
+  @type csv_contract :: %{required(String.t()) => String.t() | boolean()}
+
+  @type manifest_contract_value ::
+          pos_integer()
+          | String.t()
+          | [String.t()]
+          | string_contract()
+          | csv_contract()
+
+  @type manifest_contract :: %{required(String.t()) => manifest_contract_value()}
+  @type claims_contract :: %{required(String.t()) => String.t() | boolean()}
+
+  @type artifact_contract_value ::
+          String.t()
+          | string_contract()
+          | manifest_contract()
+          | claims_contract()
+
+  @type artifact_contract :: %{required(String.t()) => artifact_contract_value()}
+
+  @type artifact_paths :: %{
+          result_path: Path.t(),
+          manifest_path: Path.t()
+        }
+
   @type execution :: %{
           result_path: Path.t(),
           manifest_path: Path.t(),
@@ -127,6 +153,72 @@ defmodule ElixirDataScience.QCEWComparison do
       grouping_key: "first two characters of area_fips",
       input_columns: @input_columns,
       output_columns: @output_columns
+    }
+  end
+
+  @doc "Returns the default ignored result and manifest paths."
+  @spec default_artifact_paths() :: artifact_paths()
+  def default_artifact_paths do
+    %{
+      result_path: Path.join(@default_output_dir, @result_filename),
+      manifest_path: Path.join(@default_output_dir, @manifest_filename)
+    }
+  end
+
+  @doc "Returns the fixed, language-neutral fields in a version 1 artifact manifest."
+  @spec artifact_contract() :: artifact_contract()
+  def artifact_contract do
+    %{
+      "schema_version" => @schema_version,
+      "experiment_id" => @experiment_id,
+      "source" => %{
+        "schema_version" => @source_metadata_version,
+        "source_url" => @source_url,
+        "publisher" => "U.S. Bureau of Labor Statistics",
+        "dataset" => "Quarterly Census of Employment and Wages",
+        "media_type" => "text/csv",
+        "copyright_status" => "BLS-published material is public domain",
+        "copyright_url" => "https://www.bls.gov/opub/copyright-information.htm",
+        "terms_url" => "https://www.bls.gov/developers/termsOfService.htm",
+        "permitted_use" =>
+          "BLS public-domain material may be used without specific permission; cite BLS and preserve the retrieval date and BLS disclaimer",
+        "bls_disclaimer" =>
+          "BLS.gov cannot vouch for the data or analyses derived from these data after the data have been retrieved from BLS.gov."
+      },
+      "contract" => manifest_contract(),
+      "result" => %{"path" => @result_filename},
+      "claims" => claims_contract()
+    }
+  end
+
+  @doc "Returns the exact transformation and canonical CSV contract recorded in manifests."
+  @spec manifest_contract() :: manifest_contract()
+  def manifest_contract do
+    %{
+      "year" => @year,
+      "quarter" => @quarter,
+      "slice" => %{"kind" => "industry", "industry_code" => "10"},
+      "filters" => configuration().filters,
+      "disclosure_rule" => "fail if any selected row has a nonblank disclosure_code",
+      "area_fips_rule" => "require one unique five-digit county area_fips per selected row",
+      "grouping_key" => configuration().grouping_key,
+      "aggregations" => %{
+        "county_rows" => "count selected rows",
+        "month1_emplvl" => "integer sum",
+        "month2_emplvl" => "integer sum",
+        "month3_emplvl" => "integer sum",
+        "qtrly_estabs" => "integer sum",
+        "total_qtrly_wages" => "integer sum"
+      },
+      "output_columns" => @output_columns,
+      "ordering" => ["state_fips ascending"],
+      "csv" => %{
+        "delimiter" => ",",
+        "encoding" => "UTF-8",
+        "header" => true,
+        "line_ending" => "LF",
+        "final_newline" => true
+      }
     }
   end
 
@@ -610,75 +702,44 @@ defmodule ElixirDataScience.QCEWComparison do
   end
 
   defp build_manifest(source, benchmark, result, generated_at, environment, repository) do
+    artifact_contract = artifact_contract()
+
     source_manifest =
       source
-      |> Map.put("publisher", "U.S. Bureau of Labor Statistics")
-      |> Map.put("dataset", "Quarterly Census of Employment and Wages")
-      |> Map.put("media_type", "text/csv")
+      |> Map.merge(artifact_contract["source"])
       |> Map.put("retrieval_date", String.slice(source["retrieved_at"], 0, 10))
-      |> Map.put("copyright_status", "BLS-published material is public domain")
-      |> Map.put("copyright_url", "https://www.bls.gov/opub/copyright-information.htm")
-      |> Map.put("terms_url", "https://www.bls.gov/developers/termsOfService.htm")
-      |> Map.put(
-        "permitted_use",
-        "BLS public-domain material may be used without specific permission; cite BLS and preserve the retrieval date and BLS disclaimer"
-      )
-      |> Map.put(
-        "bls_disclaimer",
-        "BLS.gov cannot vouch for the data or analyses derived from these data after the data have been retrieved from BLS.gov."
-      )
 
     %{
-      "schema_version" => @schema_version,
-      "experiment_id" => @experiment_id,
+      "schema_version" => artifact_contract["schema_version"],
+      "experiment_id" => artifact_contract["experiment_id"],
       "generated_at" => generated_at |> DateTime.truncate(:second) |> DateTime.to_iso8601(),
       "source" => source_manifest,
-      "contract" => %{
-        "year" => @year,
-        "quarter" => @quarter,
-        "slice" => %{"kind" => "industry", "industry_code" => "10"},
-        "filters" => configuration().filters,
-        "disclosure_rule" => "fail if any selected row has a nonblank disclosure_code",
-        "area_fips_rule" => "require one unique five-digit county area_fips per selected row",
-        "grouping_key" => configuration().grouping_key,
-        "aggregations" => %{
-          "county_rows" => "count selected rows",
-          "month1_emplvl" => "integer sum",
-          "month2_emplvl" => "integer sum",
-          "month3_emplvl" => "integer sum",
-          "qtrly_estabs" => "integer sum",
-          "total_qtrly_wages" => "integer sum"
-        },
-        "output_columns" => @output_columns,
-        "ordering" => ["state_fips ascending"],
-        "csv" => %{
-          "delimiter" => ",",
-          "encoding" => "UTF-8",
-          "header" => true,
-          "line_ending" => "LF",
-          "final_newline" => true
-        }
-      },
-      "result" => %{
-        "path" => @result_filename,
-        "sha256" => result.sha256,
-        "byte_count" => byte_size(result.csv),
-        "source_row_count" => result.source_row_count,
-        "selected_row_count" => result.selected_row_count,
-        "row_count" => result.output_row_count,
-        "totals" => result.totals
-      },
+      "contract" => artifact_contract["contract"],
+      "result" =>
+        Map.merge(artifact_contract["result"], %{
+          "sha256" => result.sha256,
+          "byte_count" => byte_size(result.csv),
+          "source_row_count" => result.source_row_count,
+          "selected_row_count" => result.selected_row_count,
+          "row_count" => result.output_row_count,
+          "totals" => result.totals
+        }),
       "benchmark" => benchmark,
       "environment" => environment,
       "repository" => repository,
-      "claims" => %{
-        "causal" => false,
-        "predictive" => false,
-        "recession" => false,
-        "financial" => false,
-        "interpretation" =>
-          "The result is a deterministic engineering comparison artifact, not an economic conclusion."
-      }
+      "claims" => artifact_contract["claims"]
+    }
+  end
+
+  @spec claims_contract() :: claims_contract()
+  defp claims_contract do
+    %{
+      "causal" => false,
+      "predictive" => false,
+      "recession" => false,
+      "financial" => false,
+      "interpretation" =>
+        "The result is a deterministic engineering comparison artifact, not an economic conclusion."
     }
   end
 

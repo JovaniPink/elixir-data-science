@@ -7,9 +7,9 @@ intersection of Elixir and data science.
 
 Two focused experiments are implemented: a Livebook-first exploration of
 monthly U.S. inflation and unemployment, and a bounded QCEW download and
-grouping pipeline designed for later byte-level comparison with Python. Both
-use first-party BLS data. The QCEW experiment uses Explorer but does not fit a
-model.
+grouping pipeline with field-level verification of independently produced
+Python artifacts. Both use first-party BLS data. The QCEW experiment uses
+Explorer but does not fit a model.
 
 The experiments retrieve data at runtime and commit no raw dataset, generated
 model output, or credentials.
@@ -124,8 +124,20 @@ See the [QCEW source record](docs/data-sources/bls-qcew-open-data.md) for source
 public-domain status, BLS terms, permitted use, retrieval behavior, fields, and
 claim boundaries. The
 [cross-language comparison contract](docs/experiments/qcew-comparison.md)
-defines exact output bytes, measurement scope, generated paths, and the Python
-matching checklist.
+defines exact output bytes, measurement scope, generated paths, the Python
+production checklist, and the no-write verification command.
+
+After a Python implementation produces its ignored canonical CSV and version 1
+manifest, compare it with the local Elixir artifacts:
+
+```bash
+mix run scripts/verify_qcew_comparison.exs \
+  --python-result /absolute/path/to/qcew-state-totals.v1.csv \
+  --python-manifest /absolute/path/to/qcew-comparison-manifest.v1.json
+```
+
+The verifier writes nothing and reports source-contract, artifact-integrity,
+canonical-format, row-order, total, and state/column mismatches separately.
 
 This output is a deterministic engineering comparison artifact. It is not a
 causal explanation, forecast, recession indicator, trading signal, or financial
@@ -169,14 +181,16 @@ redistributed.
 
 ## Repository contents
 
-- `lib/`: BLS retrieval, transformations, clustering, QCEW grouping, and
-  measurement support.
+- `lib/`: BLS retrieval, transformations, clustering, QCEW grouping,
+  measurement, and cross-language verification support.
 - `test/`: synthetic BLS-shaped and QCEW-shaped fixtures and deterministic
   tests.
 - `notebooks/bls_macro_clustering.livemd`: documented interactive analysis.
 - `scripts/run_bls_macro_clustering.exs`: non-notebook execution path.
 - `scripts/run_qcew_comparison.exs`: QCEW source, grouping, measurement, and
   manifest execution path.
+- `scripts/verify_qcew_comparison.exs`: no-write QCEW Elixir-Python artifact
+  verifier.
 - `scripts/verify_livebook_runtime.exs`: standalone path/lock/chart check.
 - `docs/data-sources/`: source, terms, provenance, and claim boundaries.
 - `docs/experiments/`: dated run records and bounded interpretations.
