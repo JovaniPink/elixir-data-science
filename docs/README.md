@@ -21,6 +21,9 @@ running the Elixir project.
 | Admit and run regional sources | [Regional source admission and backtest runbook](runbooks/regional-source-admission.md) | Manual normalization boundary, receipt preparation, offline admission, paired execution, failure handling, and evidence preservation |
 | Inspect generated regional files | [Regional expert ensemble v1 artifact reference](reference/regional-artifacts-v1.md) | Source bundle, normalized vintages, panel, folds, predictions, manifest fields, and verifier rules |
 | Record a publisher-backed run | [Regional real-run record template](templates/regional-real-run-record.md) | Required identity, source evidence, parity results, metrics, limitations, and claim language |
+| Understand the regional models | [Regional expert ensemble model card](guides/regional-ensemble-model-card.md) | Target, expert features, ridge training, stacking, neural gating, evaluation, intended use, and limitations |
+| Interpret regional results | [Interpreting regional ensemble results](guides/interpreting-regional-results.md) | Metrics, weights, contributions, intervals, grouped diagnostics, comparisons, and safe performance language |
+| Contribute an experiment | [Contributor guide](../CONTRIBUTING.md) | Branch safety, source evidence, contracts, tests, cross-language changes, and pull-request requirements |
 | Match the BLS macro output by meaning | [BLS macro conformance report](experiments/bls-macro-conformance.md) | Versioned JSON fields, label-independent profiles, comparison tolerance, and generated path |
 | Review the prior observed result | [BLS macro clustering run record: August 16, 2026](experiments/bls-macro-clustering.md) | The preserved 2006-2025 run before the 2026 sample extension |
 | Reproduce interactively | [BLS macro clustering Livebook](../notebooks/bls_macro_clustering.livemd) | The executable notebook backed by the repository lockfile |

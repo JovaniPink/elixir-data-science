@@ -5,14 +5,17 @@ intersection of Elixir and data science.
 
 ## Current status
 
-Two focused experiments are implemented: a Livebook-first exploration of
-monthly U.S. inflation and unemployment, and a bounded QCEW download and
-grouping pipeline with field-level verification of independently produced
-Python artifacts. Both use first-party BLS data. The QCEW experiment uses
-Explorer but does not fit a model.
+Three focused experiments are implemented: a Livebook-first exploration of
+monthly U.S. inflation and unemployment, a bounded QCEW download and grouping
+pipeline with field-level verification of independently produced Python
+artifacts, and a point-in-time regional expert ensemble. The first two use
+first-party BLS data. The regional ensemble has passed its cross-language
+contract only with synthetic multi-vintage input; it has not produced a
+publisher-backed performance result.
 
-The experiments retrieve data at runtime and commit no raw dataset, generated
-model output, or credentials.
+The BLS macro and QCEW comparison experiments retrieve data at runtime. The
+regional ensemble consumes a locally admitted, hash-verified bundle. The
+repository commits no raw dataset, generated model output, or credentials.
 
 The QCEW source CSV, its hash sidecar, grouped output, and versioned result
 manifest are also generated only in the ignored `data/` and `artifacts/`
@@ -164,7 +167,9 @@ mix run scripts/verify_regional_expert_ensemble.exs \
 
 This is a point-in-time historical backtest, not a causal, recession, trading,
 or financial-advice claim. See the
-[regional ensemble contract](docs/experiments/regional-expert-ensemble.md).
+[regional ensemble contract](docs/experiments/regional-expert-ensemble.md),
+[source-admission runbook](docs/runbooks/regional-source-admission.md), and
+[model card](docs/guides/regional-ensemble-model-card.md).
 
 ## Open the Livebook
 
@@ -204,21 +209,32 @@ redistributed.
 
 ## Repository contents
 
-- `lib/`: BLS retrieval, transformations, clustering, QCEW grouping,
-  measurement, and cross-language verification support.
-- `test/`: synthetic BLS-shaped and QCEW-shaped fixtures and deterministic
-  tests.
+- `lib/`: BLS retrieval, transformations, clustering, QCEW grouping, regional
+  modeling, source admission, and cross-language verification support.
+- `test/`: synthetic BLS-shaped, QCEW-shaped, and regional multi-vintage
+  fixtures with deterministic tests.
 - `notebooks/bls_macro_clustering.livemd`: documented interactive analysis.
 - `scripts/run_bls_macro_clustering.exs`: non-notebook execution path.
 - `scripts/run_qcew_comparison.exs`: QCEW source, grouping, measurement, and
   manifest execution path.
 - `scripts/verify_qcew_comparison.exs`: no-write QCEW Elixir-Python artifact
   verifier.
+- `scripts/build_regional_source_bundle.exs`: offline-first regional candidate
+  bundle admission and normalized artifact writer.
+- `scripts/run_regional_expert_ensemble.exs`: regional backtest runner.
+- `scripts/verify_regional_expert_ensemble.exs`: no-write regional
+  Elixir-Python artifact verifier.
 - `scripts/verify_livebook_runtime.exs`: standalone path/lock/chart check.
 - `docs/data-sources/`: source, terms, provenance, and claim boundaries.
 - `docs/experiments/`: dated run records and bounded interpretations.
+- `docs/guides/`: reader-focused model and result interpretation.
+- `docs/reference/`: generated artifact and field contracts.
+- `docs/runbooks/`: operator procedures and failure handling.
+- `docs/templates/`: evidence-safe records for future executed runs.
 - `docs/README.md`: documentation map and cross-language replication boundary.
 - `README.md`: setup, validation, execution, and scope.
+- `CONTRIBUTING.md`: contributor workflow, evidence requirements, and review
+  checklist.
 - `AGENTS.md`: repository-local contributor guidance.
 - `docs/elixir-data-science-ecosystem.md`: dated ecosystem research brief.
 - `LICENSE`: license for repository-authored material.
