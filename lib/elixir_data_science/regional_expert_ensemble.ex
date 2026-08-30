@@ -36,8 +36,12 @@ defmodule ElixirDataScience.RegionalExpertEnsemble do
     "target_vintage"
   ]
 
+  @type scalar :: String.t() | number() | boolean()
+  @type row :: %{required(String.t()) => scalar()}
+  @type json_object :: %{required(String.t()) => term()}
+
   @doc "Loads the exact shared v1 contract."
-  @spec load_contract(Path.t()) :: {:ok, map()} | {:error, term()}
+  @spec load_contract(Path.t()) :: {:ok, json_object()} | {:error, term()}
   def load_contract(path \\ @contract_path) do
     with {:ok, bytes} <- File.read(path),
          {:ok, contract} <- Jason.decode(bytes),
@@ -91,7 +95,7 @@ defmodule ElixirDataScience.RegionalExpertEnsemble do
     do: raise(ArgumentError, "log growth requires positive levels")
 
   @doc "Validates publisher identity, cutoff, and exact local source bytes."
-  @spec validate_receipts([map()]) :: :ok | {:error, String.t()}
+  @spec validate_receipts([json_object()]) :: :ok | {:error, String.t()}
   def validate_receipts(receipts) when is_list(receipts) do
     result =
       receipts
@@ -162,7 +166,7 @@ defmodule ElixirDataScience.RegionalExpertEnsemble do
     end
   end
 
-  defp validate_host(url, required_host, path) do
+  defp validate_host(url, required_host, path, field \\ "publisher_url") do
     case URI.parse(url).host do
       host when host == required_host ->
         :ok
@@ -170,10 +174,10 @@ defmodule ElixirDataScience.RegionalExpertEnsemble do
       host when is_binary(host) ->
         if String.ends_with?(host, ".#{required_host}"),
           do: :ok,
-          else: {:error, "#{path}.publisher_url: host must be #{required_host}"}
+          else: {:error, "#{path}.#{field}: host must be #{required_host}"}
 
       _other ->
-        {:error, "#{path}.publisher_url: host must be #{required_host}"}
+        {:error, "#{path}.#{field}: host must be #{required_host}"}
     end
   end
 
@@ -212,7 +216,7 @@ defmodule ElixirDataScience.RegionalExpertEnsemble do
   end
 
   @doc "Validates the complete normalized source bundle and its 51-state/DC vintages."
-  @spec validate_source_bundle(map()) :: :ok | {:error, String.t()}
+  @spec validate_source_bundle(json_object()) :: :ok | {:error, String.t()}
   def validate_source_bundle(bundle) when is_map(bundle) do
     with {:ok, contract} <- load_contract(),
          :ok <-
@@ -229,7 +233,8 @@ defmodule ElixirDataScience.RegionalExpertEnsemble do
          states = MapSet.new(contract["population"]["state_fips"]),
          :ok <- validate_observation_set("qcew", observations["qcew"], states),
          :ok <- validate_observation_set("bea", observations["bea"], states),
-         :ok <- validate_observation_set("fhfa", observations["fhfa"], states) do
+         :ok <- validate_observation_set("fhfa", observations["fhfa"], states),
+         :ok <- validate_fhfa_layout_checks(bundle, observations["fhfa"]) do
       :ok
     else
       {:error, reason} when is_binary(reason) -> {:error, reason}
@@ -284,6 +289,60 @@ defmodule ElixirDataScience.RegionalExpertEnsemble do
 
   defp validate_observation_set(source, _rows, _states),
     do: {:error, "observations.#{source}: expected nonempty array"}
+
+  defp validate_fhfa_layout_checks(bundle, rows) do
+    checks = bundle["fhfa_layout_checks"]
+    extraction_tools = bundle["extraction_tools"]
+
+    with {:ok, extraction_tools} <- require_map(extraction_tools, "extraction_tools"),
+         {:ok, pdftotext} <- required_text(extraction_tools, "pdftotext", "extraction_tools"),
+         true <- is_list(checks) and checks != [] do
+      observed_reports = MapSet.new(rows, & &1["report_url"])
+
+      result =
+        checks
+        |> Enum.with_index()
+        |> Enum.reduce_while({MapSet.new(), :ok}, fn {check, index}, {seen, :ok} ->
+          path = "fhfa_layout_checks[#{index}]"
+
+          with true <- is_map(check),
+               {:ok, report_url} <- required_text(check, "report_url", path),
+               false <- MapSet.member?(seen, report_url),
+               :ok <- validate_host(report_url, "fhfa.gov", path, "report_url"),
+               {:ok, release} <- required_text(check, "release_date", path),
+               :ok <- validate_release_date(release, path),
+               {:ok, _layout_era} <- required_text(check, "layout_era", path),
+               :ok <-
+                 require_equal(check["pdftotext_version"], pdftotext, "#{path}.pdftotext_version"),
+               :ok <- require_equal(check["row_count"], 51, "#{path}.row_count"),
+               :ok <- validate_layout_flags(check, path) do
+            {:cont, {MapSet.put(seen, report_url), :ok}}
+          else
+            false -> {:halt, {seen, {:error, "#{path}.report_url: duplicate layout check"}}}
+            {:error, reason} -> {:halt, {seen, {:error, reason}}}
+            _other -> {:halt, {seen, {:error, "#{path}: expected object"}}}
+          end
+        end)
+
+      case result do
+        {^observed_reports, :ok} -> :ok
+        {%MapSet{}, :ok} -> {:error, "fhfa_layout_checks: must cover every admitted FHFA report"}
+        {_seen, {:error, reason}} -> {:error, reason}
+      end
+    else
+      false -> {:error, "fhfa_layout_checks: expected nonempty array"}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp validate_layout_flags(check, path) do
+    ["expected_headings", "numeric_values", "warning_text_preserved", "manual_samples_verified"]
+    |> Enum.reduce_while(:ok, fn flag, :ok ->
+      if check[flag] == true,
+        do: {:cont, :ok},
+        else: {:halt, {:error, "#{path}.#{flag}: expected true"}}
+    end)
+  end
 
   defp validate_observation(source, row, index, states) when is_map(row) do
     path = "observations.#{source}[#{index}]"
@@ -363,7 +422,7 @@ defmodule ElixirDataScience.RegionalExpertEnsemble do
   defp observation_discriminator("fhfa", row, path), do: required_text(row, "report_url", path)
 
   @doc "Builds the independently derived point-in-time state-quarter panel."
-  @spec build_panel(map()) :: {:ok, [map()]} | {:error, String.t()}
+  @spec build_panel(json_object()) :: {:ok, [row()]} | {:error, String.t()}
   def build_panel(bundle) do
     with :ok <- validate_source_bundle(bundle),
          {:ok, contract} <- load_contract() do
@@ -501,7 +560,7 @@ defmodule ElixirDataScience.RegionalExpertEnsemble do
   defp max_release(rows), do: rows |> Enum.map(& &1["release_date"]) |> Enum.max()
 
   @doc "Builds exact expanding fold membership with point-in-time outcome availability."
-  @spec build_folds([map()]) :: [map()]
+  @spec build_folds([row()]) :: [row()]
   def build_folds(panel) when is_list(panel) do
     {:ok, contract} = load_contract()
     minimum = contract["time"]["minimum_training_quarters"]
@@ -554,7 +613,7 @@ defmodule ElixirDataScience.RegionalExpertEnsemble do
   end
 
   @doc "Serializes canonical CSV with fixed column order and LF endings."
-  @spec canonical_csv([map()], [String.t()]) :: String.t()
+  @spec canonical_csv([row()], [String.t()]) :: String.t()
   def canonical_csv(rows, columns) when is_list(rows) and rows != [] and is_list(columns) do
     header = Enum.map_join(columns, ",", &csv_escape/1)
 
@@ -585,6 +644,20 @@ defmodule ElixirDataScience.RegionalExpertEnsemble do
       value
     end
   end
+
+  @doc "Serializes canonical compact JSON with sorted keys and one LF."
+  @spec canonical_json(term()) :: String.t()
+  def canonical_json(value), do: value |> ordered_json() |> Jason.encode!() |> Kernel.<>("\n")
+
+  defp ordered_json(value) when is_map(value) and not is_struct(value) do
+    value
+    |> Enum.sort_by(fn {key, _value} -> to_string(key) end)
+    |> Enum.map(fn {key, nested} -> {to_string(key), ordered_json(nested)} end)
+    |> Jason.OrderedObject.new()
+  end
+
+  defp ordered_json(value) when is_list(value), do: Enum.map(value, &ordered_json/1)
+  defp ordered_json(value), do: value
 
   @doc "Exhaustively searches four nonnegative 0.05 weights that sum to one."
   @spec search_convex_stack([[number()]], [number()]) :: [float()]

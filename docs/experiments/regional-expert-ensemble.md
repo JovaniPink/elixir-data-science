@@ -47,6 +47,11 @@ mix run scripts/verify_regional_expert_ensemble.exs \
 Panel and fold files must be byte-identical. Deterministic predictions use an
 absolute tolerance of `1.0e-6`; neural rows require identical eligibility,
 finite predictions, weights in `[0,1]`, and weights summing to one.
+The verifier also checks artifact hashes and row counts, compact sorted
+manifests, contract settings and claim boundaries, grouped metrics, exact
+convex-stack weights, and each weighted model's expert contributions. Every
+model uses its own trailing absolute residuals for the empirical 80 percent
+interval.
 
 On August 29, 2026, both implementations consumed the same complete synthetic
 multi-vintage bundle spanning 2015 Q1 through 2025 Q4. The no-write verifier

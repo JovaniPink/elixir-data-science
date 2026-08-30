@@ -3,6 +3,7 @@ defmodule ElixirDataScience.RegionalFixture do
 
   alias ElixirDataScience.RegionalExpertEnsemble, as: Regional
 
+  @spec bundle(Path.t()) :: Regional.json_object()
   def bundle(root) do
     File.mkdir_p!(root)
     {:ok, contract} = Regional.load_contract()
@@ -78,11 +79,30 @@ defmodule ElixirDataScience.RegionalFixture do
         end)
       end)
 
+    fhfa_layout_checks =
+      fhfa
+      |> Enum.uniq_by(& &1["report_url"])
+      |> Enum.sort_by(& &1["report_url"])
+      |> Enum.map(fn row ->
+        %{
+          "report_url" => row["report_url"],
+          "release_date" => row["release_date"],
+          "layout_era" => "synthetic_v1",
+          "pdftotext_version" => "pdftotext -layout synthetic 1.0",
+          "row_count" => 51,
+          "expected_headings" => true,
+          "numeric_values" => true,
+          "warning_text_preserved" => true,
+          "manual_samples_verified" => true
+        }
+      end)
+
     %{
       "schema_version" => "regional-source-bundle.v1",
       "contract_sha256" => Regional.contract_sha256(),
       "research_cutoff" => "2026-08-29",
-      "extraction_tools" => %{"pdftotext" => "synthetic fixture"},
+      "extraction_tools" => %{"pdftotext" => "pdftotext -layout synthetic 1.0"},
+      "fhfa_layout_checks" => fhfa_layout_checks,
       "sources" => receipts,
       "observations" => %{
         "qcew" => Enum.reverse(qcew),

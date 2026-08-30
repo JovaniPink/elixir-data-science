@@ -3,6 +3,7 @@ defmodule ElixirDataScience.RegionalExpertEnsembleTest do
 
   alias ElixirDataScience.RegionalExpertEnsemble, as: Regional
   alias ElixirDataScience.RegionalFixture
+  alias ElixirDataScience.RegionalModeling
   alias ElixirDataScience.RegionalSourceBuilder
 
   test "loads the committed contract and fixes its hash" do
@@ -11,7 +12,7 @@ defmodule ElixirDataScience.RegionalExpertEnsembleTest do
     assert length(contract["population"]["state_fips"]) == 51
 
     assert Regional.contract_sha256() ==
-             "92a293f77382a7b3053e30894c9f3a28429f1ec254af341b2375bc118160d89d"
+             "c1693dbe606629fcc1f63eb7a915f14219c7b2bc580ea85afc72371957f651c9"
   end
 
   test "quarter arithmetic and target formula are calendar based" do
@@ -40,6 +41,11 @@ defmodule ElixirDataScience.RegionalExpertEnsembleTest do
 
     assert Regional.canonical_csv(rows, ["forecast_origin", "state_fips", "value", "flag"]) ==
              "forecast_origin,state_fips,value,flag\n2020Q1,01,1.5000000000,true\n"
+  end
+
+  test "canonical JSON sorts nested keys and uses one LF" do
+    assert Regional.canonical_json(%{"z" => 1, "a" => %{"y" => true, "b" => 2}}) ==
+             "{\"a\":{\"b\":2,\"y\":true},\"z\":1}\n"
   end
 
   test "source receipts reject a wrong publisher host and hash" do
@@ -124,6 +130,38 @@ defmodule ElixirDataScience.RegionalExpertEnsembleTest do
 
     assert {:error, reason} = Regional.validate_source_bundle(future)
     assert reason =~ "research cutoff"
+  end
+
+  test "rejects FHFA layout evidence without preserved warning text" do
+    root = Path.join(System.tmp_dir!(), "regional-layout-#{System.unique_integer([:positive])}")
+    bundle = RegionalFixture.bundle(root)
+    [first | rest] = bundle["fhfa_layout_checks"]
+
+    invalid =
+      put_in(bundle, ["fhfa_layout_checks"], [
+        %{first | "warning_text_preserved" => false} | rest
+      ])
+
+    assert {:error, reason} = Regional.validate_source_bundle(invalid)
+    assert reason =~ "warning_text_preserved"
+  end
+
+  test "trailing MAE never uses other states from the same quarter" do
+    predictions = [[2.0, 4.0, 6.0, 8.0], [4.0, 6.0, 8.0, 10.0], [9.0, 9.0, 9.0, 9.0]]
+    targets = [1.0, 3.0, 8.0]
+
+    trailing =
+      RegionalModeling.trailing_mae_matrix(
+        predictions,
+        targets,
+        ["2020Q1", "2020Q1", "2020Q2"]
+      )
+
+    assert Enum.at(trailing, 0) == [1.0, 1.0, 1.0, 1.0]
+    assert Enum.at(trailing, 1) == [1.0, 1.0, 1.0, 1.0]
+
+    Enum.zip(Enum.at(trailing, 2), [1.0, 3.0, 5.0, 7.0])
+    |> Enum.each(fn {actual, expected} -> assert_in_delta actual, expected, 1.0e-12 end)
   end
 
   test "source builder emits normalized artifacts and protects unmanaged refresh targets" do

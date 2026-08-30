@@ -38,7 +38,10 @@ defmodule ElixirDataScience.RegionalSourceBuilder do
     ]
   }
 
-  @spec build(Path.t(), Path.t(), keyword()) :: {:ok, map()} | {:error, term()}
+  @type download_fun :: (String.t() -> {:ok, binary()} | {:error, term()})
+
+  @spec build(Path.t(), Path.t(), keyword()) ::
+          {:ok, Regional.json_object()} | {:error, term()}
   def build(candidate_path, output_dir, opts \\ []) do
     refresh? = Keyword.get(opts, :refresh_source, false)
     download_fun = Keyword.get(opts, :download_fun, &download/1)
@@ -136,7 +139,7 @@ defmodule ElixirDataScience.RegionalSourceBuilder do
         "byte_count" => receipt["byte_count"]
       }
 
-      File.write!(path <> ".regional-source-receipt.json", Jason.encode!(sidecar) <> "\n")
+      File.write!(path <> ".regional-source-receipt.json", Regional.canonical_json(sidecar))
     end)
 
     :ok
@@ -145,7 +148,7 @@ defmodule ElixirDataScience.RegionalSourceBuilder do
   defp emit_bundle(bundle, output_dir) do
     File.write(
       Path.join(output_dir, "regional-source-bundle.v1.json"),
-      Jason.encode!(bundle) <> "\n"
+      Regional.canonical_json(bundle)
     )
   end
 
