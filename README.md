@@ -143,6 +143,29 @@ This output is a deterministic engineering comparison artifact. It is not a
 causal explanation, forecast, recession indicator, trading signal, or financial
 advice.
 
+## Run the regional expert ensemble
+
+Use a locally admitted, hash-verified source bundle. Generated artifacts remain
+under ignored paths.
+
+```bash
+mix run scripts/build_regional_source_bundle.exs \
+  --candidate-bundle data/regional/candidate/regional-source-bundle.v1.json \
+  --output-dir data/regional/v1
+
+mix run scripts/run_regional_expert_ensemble.exs \
+  --source-bundle data/regional/v1/regional-source-bundle.v1.json \
+  --output-dir artifacts/regional-ensemble/elixir/v1
+
+mix run scripts/verify_regional_expert_ensemble.exs \
+  --elixir-dir artifacts/regional-ensemble/elixir/v1 \
+  --python-dir /path/to/python-data-science/artifacts/regional-ensemble/python/v1
+```
+
+This is a point-in-time historical backtest, not a causal, recession, trading,
+or financial-advice claim. See the
+[regional ensemble contract](docs/experiments/regional-expert-ensemble.md).
+
 ## Open the Livebook
 
 Open [`notebooks/bls_macro_clustering.livemd`](notebooks/bls_macro_clustering.livemd)
