@@ -25,6 +25,8 @@ defmodule ElixirDataScience.MixProject do
       {:exla, "~> 0.13.1"},
       {:explorer, "~> 0.12.0"},
       {:scholar, "~> 0.4.2"},
+      {:axon, "~> 0.8.1"},
+      {:polaris, "~> 0.1"},
       {:req, "~> 0.7.2"},
       {:jason, "~> 1.4"},
       {:vega_lite, "~> 0.1.11"},
