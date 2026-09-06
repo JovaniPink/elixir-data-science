@@ -25,8 +25,11 @@ normalized/building-permits-vintages.v2.csv
 normalized/treasury-daily.v2.csv
 ```
 
-Elixir alone normalizes publisher bytes. Elixir and Python independently read
-the same normalized bytes and construct downstream artifacts.
+The local-only `economic-data-pipeline` repository owns v2 publisher-byte
+custody and normalization. Elixir and Python independently read the same
+normalized bytes and construct panels, folds, predictions, model state, and
+run manifests. Neither model repository downloads or normalizes v2 publisher
+data. The existing v1 Elixir admission and normalization behavior is unchanged.
 
 ## Model artifacts
 
