@@ -30,7 +30,7 @@ jobs:
       - run: mix hex.audit
       - name: Verify formatting and show a bounded repair diff
         run: |
-          mix format --check-formatted || { mix format; git diff -- scripts/run_workforce_eda.exs; exit 1; }
+          mix format --check-formatted || { mix format; elixir -e 'IO.puts("FORMATTED_WORKFORCE=" <> Base.encode64(File.read!("scripts/run_workforce_eda.exs")))'; exit 1; }
       - run: mix test
       - run: elixir scripts/verify_livebook_runtime.exs
       - name: Verify independent synthetic workforce EDA

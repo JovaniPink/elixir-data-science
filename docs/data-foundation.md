@@ -23,3 +23,5 @@ GCS is durable custody; bounded local paths are explicit materializations. The p
 Historical receipt v1 remains readable evidence. Publisher-backed acceptance requires v2 byte binding and a trusted pinned release; arbitrary CSV plus a cloud-shaped JSON reference is insufficient. Qualification, validation, durability, freshness and consumer eligibility remain separate.
 
 See the [repository README](../README.md) for canonical gates and existing domain runbooks.
+
+The [shared snapshot](../contracts/data-foundation/checksums.json) is checked by `python3 scripts/check_foundation_contracts.py` in credential-free CI. The private integration gate compares these checksums against the authoritative release.

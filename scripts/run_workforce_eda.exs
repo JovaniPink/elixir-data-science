@@ -19,6 +19,11 @@ else
   if assessment["status"] != "approved" or assessment["use"] != "private_research" or record["purpose"] != "private_research" or assessment["domain"] != manifest["artifact"]["domain"] or not Enum.all?(manifest["source_ids"], &(&1 in assessment["source_ids"])) or not Enum.all?(~w(research transformation storage gcs_storage), &(&1 in assessment["operations"])), do: raise("assessment does not qualify private research")
   relative = Path.relative_to(Path.expand(input), Path.dirname(Path.expand(record_path)))
   if Path.type(relative) == :absolute or ".." in Path.split(relative), do: raise("input outside materialization")
+  Enum.reduce(Path.split(Path.expand(input)), "", fn part, parent ->
+    path = Path.join(parent, part)
+    if File.lstat!(path).type == :symlink, do: raise("symlink input path rejected")
+    path
+  end)
   [item] = Enum.filter(record["objects"], &(&1["path"] == relative))
   if item not in manifest["objects"] or sha.(bytes) != item["object"]["sha256"] or byte_size(bytes) != item["object"]["size"], do: raise("input differs from pinned selection")
   %{"schema_version" => "analysis-input.v1", "release" => ref, "object" => item["object"], "path" => relative, "materialization_sha256" => sha.(record_bytes), "assessment" => manifest["assessment"], "purpose" => "private_research"}
