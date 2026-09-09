@@ -28,9 +28,7 @@ jobs:
       - run: mix local.rebar rebar3 "${{ matrix.rebar_url }}" --sha512 "${{ matrix.rebar_sha512 }}" --force
       - run: mix deps.get --check-locked
       - run: mix hex.audit
-      - name: Verify formatting and show a bounded repair diff
-        run: |
-          mix format --check-formatted || { mix format; elixir -e 'IO.puts("FORMATTED_WORKFORCE=" <> Base.encode64(File.read!("scripts/run_workforce_eda.exs")))'; exit 1; }
+      - run: mix format --check-formatted
       - run: mix test
       - run: elixir scripts/verify_livebook_runtime.exs
       - name: Verify independent synthetic workforce EDA

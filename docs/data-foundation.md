@@ -6,7 +6,7 @@ The standalone script uses the OTP JSON module and requires the repository's dec
 
 Python and Elixir remain peers. Selected replication proves this descriptive method; it does not require every future model twice. The unavailable regional v2 ensemble remains a separate blocked contract. No cloud credentials or source acquisition are needed for this script.
 
-## Adoption contract — foundation 0.2.0
+## Adoption contract - foundation 0.2.0
 
 | Field | Contract |
 |---|---|
