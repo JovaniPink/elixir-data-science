@@ -28,6 +28,12 @@ jobs:
       - run: mix local.rebar rebar3 "${{ matrix.rebar_url }}" --sha512 "${{ matrix.rebar_sha512 }}" --force
       - run: mix deps.get --check-locked
       - run: mix hex.audit
-      - run: mix format --check-formatted
+      - name: Verify formatting and show a bounded repair diff
+        run: |
+          mix format --check-formatted || { mix format; git diff -- scripts/run_workforce_eda.exs; exit 1; }
       - run: mix test
       - run: elixir scripts/verify_livebook_runtime.exs
+      - name: Verify independent synthetic workforce EDA
+        run: |
+          elixir scripts/run_workforce_eda.exs test/fixtures/workforce/synthetic.csv /tmp/workforce-eda test/fixtures/workforce/release.json
+          elixir -e 'r = :json.decode(File.read!("/tmp/workforce-eda/workforce-eda.v1.json")); if length(r["row_ids"]) != 51 or Enum.sum(Enum.map(r["regions"], & &1["requests"])) != 1000 or Enum.sum(Enum.map(r["regions"], & &1["weighted_slots"])) != 102, do: raise("workforce allocation invariant failed"); IO.puts("WORKFORCE_EDA_JSON=" <> File.read!("/tmp/workforce-eda/workforce-eda.v1.json")); IO.puts("WORKFORCE_RECEIPT_JSON=" <> File.read!("/tmp/workforce-eda/analysis-run.v2.json")); IO.puts("WORKFORCE_REPORT_JSON=" <> IO.iodata_to_binary(:json.encode(File.read!("/tmp/workforce-eda/eda.md"))))'
