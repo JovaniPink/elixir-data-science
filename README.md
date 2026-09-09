@@ -1,5 +1,7 @@
 # Elixir Data Science Experiments
 
+See the [data foundation adoption contract](docs/data-foundation.md) for cross-project ownership, supported commands, evidence boundaries and acceptance status.
+
 This repository is reserved for small, reviewable experiments at the
 intersection of Elixir and data science.
 
