@@ -37,7 +37,8 @@ binding =
          not Enum.all?(
            ~w(research transformation storage gcs_storage),
            &(&1 in assessment["operations"])
-         ), do: raise("assessment does not qualify private research")
+         ),
+       do: raise("assessment does not qualify private research")
 
     relative = Path.relative_to(Path.expand(input), Path.dirname(Path.expand(record_path)))
 
