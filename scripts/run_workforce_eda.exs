@@ -8,6 +8,13 @@ regions =
 bytes = File.read!(input)
 sha = fn data -> :crypto.hash(:sha256, data) |> Base.encode16(case: :lower) end
 ref = :json.decode(File.read!(release_ref))
+input_sha256 = sha.(bytes)
+
+# A synthetic reference has no materialization record, so its input_sha256 is the only binding.
+# Require it there, and honor it whenever a reference supplies one; never emit a stale hash.
+if (ref["synthetic"] == true or Map.has_key?(ref, "input_sha256")) and
+     ref["input_sha256"] != input_sha256,
+   do: raise("input differs from release reference hash")
 
 binding =
   if ref["synthetic"] == true do
@@ -53,7 +60,7 @@ binding =
 
     [item] = Enum.filter(record["objects"], &(&1["path"] == relative))
 
-    if item not in manifest["objects"] or sha.(bytes) != item["object"]["sha256"] or
+    if item not in manifest["objects"] or input_sha256 != item["object"]["sha256"] or
          byte_size(bytes) != item["object"]["size"],
        do: raise("input differs from pinned selection")
 
@@ -103,7 +110,7 @@ values = Enum.sort(Map.values(weights))
 
 result = %{
   "schema_version" => "workforce-eda.v1",
-  "input_sha256" => sha.(bytes),
+  "input_sha256" => input_sha256,
   "row_ids" => regions,
   "missingness" => 0,
   "coverage" => %{"present" => 51, "expected" => 51},
@@ -136,7 +143,7 @@ receipt = %{
   "input_binding" => binding,
   "language" => "elixir",
   "release" => ref,
-  "input_sha256" => sha.(bytes),
+  "input_sha256" => input_sha256,
   "output_sha256" => sha.(encoded),
   "environment" => System.version(),
   "code_sha256" => sha.(File.read!(__ENV__.file)),
