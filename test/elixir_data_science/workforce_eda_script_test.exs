@@ -84,6 +84,10 @@ defmodule ElixirDataScience.WorkforceEdaScriptTest do
     File.write!(release, encode(ref))
     output = Path.join(root, "out")
 
+    assert {message, status} = run_script([input, output, release])
+    assert status != 0
+    assert message =~ "non-synthetic release requires one MATERIALIZATION_RECORD argument"
+
     File.write!(record_path, encode(Map.delete(record, "verifier_version")))
     assert {message, status} = run_script([input, output, release, record_path])
     assert status != 0

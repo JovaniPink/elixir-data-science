@@ -1,6 +1,6 @@
 # Workforce descriptive peer
 
-`elixir scripts/run_workforce_eda.exs WORKFORCE_CSV PRIVATE_OUTPUT RELEASE_REF_JSON` implements EDA and largest-remainder allocation independently of Python. It consumes the same canonical 51-region input and emits `workforce-eda.v1.json`, `analysis-run.v2.json` and `eda.md`.
+`elixir scripts/run_workforce_eda.exs WORKFORCE_CSV PRIVATE_OUTPUT RELEASE_REF_JSON [MATERIALIZATION_RECORD_JSON]` implements EDA and largest-remainder allocation independently of Python. The fourth argument is required for a non-synthetic release reference and ignored for a synthetic one. It consumes the same canonical 51-region input and emits `workforce-eda.v1.json`, `analysis-run.v2.json` and `eda.md`.
 
 The standalone script uses the OTP JSON module and requires the repository's declared Erlang/Elixir toolchain. Neither runtime was installed on the implementation host, so execution and format acceptance remain pending. Do not describe the implemented script as verified parity.
 

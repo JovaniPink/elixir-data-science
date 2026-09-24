@@ -1,4 +1,6 @@
-# Standalone descriptive peer: elixir scripts/run_workforce_eda.exs INPUT OUTPUT RELEASE_REF
+# Standalone descriptive peer:
+#   elixir scripts/run_workforce_eda.exs INPUT OUTPUT RELEASE_REF [MATERIALIZATION_RECORD]
+# MATERIALIZATION_RECORD is required unless RELEASE_REF is synthetic, and is ignored when it is.
 # Uses Erlang/OTP JSON; no Python outputs, cloud credentials, or source downloads.
 [input, output, release_ref | materialization_args] = System.argv()
 
@@ -21,7 +23,12 @@ binding =
     # :json encodes the atom nil as the string "nil"; :null is JSON null.
     :null
   else
-    [record_path] = materialization_args
+    record_path =
+      case materialization_args do
+        [path] -> path
+        _ -> raise("non-synthetic release requires one MATERIALIZATION_RECORD argument")
+      end
+
     record_bytes = File.read!(record_path)
     record = :json.decode(record_bytes)
     # Required envelope of contracts/data-foundation/verified-materialization.v1.json.
