@@ -7,6 +7,7 @@ defmodule ElixirDataScience.RegionalV2 do
   """
 
   @contract_path Path.expand("../../contracts/regional-expert-ensemble.v2.json", __DIR__)
+  @schema_version "regional-expert-ensemble.v2"
 
   defmodule ArtifactReceipt do
     @moduledoc "Integrity metadata for one declared normalized artifact."
@@ -207,12 +208,8 @@ defmodule ElixirDataScience.RegionalV2 do
   @spec load_contract() :: {:ok, map()} | {:error, term()}
   def load_contract do
     with {:ok, bytes} <- File.read(@contract_path),
-         {:ok, %{"schema_version" => "regional-expert-ensemble.v2"} = contract} <-
-           Jason.decode(bytes) do
-      {:ok, contract}
-    else
-      {:ok, _other} -> {:error, :invalid_v2_contract}
-      error -> error
+         {:ok, decoded} <- Jason.decode(bytes) do
+      validate_contract(decoded)
     end
   end
 
@@ -236,10 +233,15 @@ defmodule ElixirDataScience.RegionalV2 do
     end
   end
 
-  @doc "Admits a profile from an already decoded v2 contract map."
+  @doc """
+  Admits a profile from an already decoded contract map.
+
+  The map must carry the exact v2 `schema_version` checked by `load_contract/0`.
+  """
   @spec profile(String.t(), map()) :: {:ok, Profile.t()} | {:error, term()}
   def profile(profile_id, contract) when is_binary(profile_id) and is_map(contract) do
-    with {:ok, value} <- fetch_profile(contract, profile_id),
+    with {:ok, contract} <- validate_contract(contract),
+         {:ok, value} <- fetch_profile(contract, profile_id),
          {:ok, active?} <- profile_active(value, profile_id),
          {:ok, experts} <- known_ids(Map.get(value, "experts"), profile_id),
          {:ok, gate_context} <- known_ids(Map.get(value, "gate_context", []), profile_id) do
@@ -461,6 +463,9 @@ defmodule ElixirDataScience.RegionalV2 do
       _resolved_path -> :ok
     end
   end
+
+  defp validate_contract(%{"schema_version" => @schema_version} = contract), do: {:ok, contract}
+  defp validate_contract(_other), do: {:error, :invalid_v2_contract}
 
   defp fetch_profile(%{"profiles" => profiles}, profile_id) when is_map(profiles) do
     case Map.fetch(profiles, profile_id) do

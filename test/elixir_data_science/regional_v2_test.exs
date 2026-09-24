@@ -133,21 +133,28 @@ defmodule ElixirDataScience.RegionalV2Test do
     assert {:error, {:unknown_profile, "missing"}} = RegionalV2.profile("missing")
 
     assert {:ok, %RegionalV2.Profile{experts: [:labor], gate_context: [:treasury]}} =
-             RegionalV2.profile("custom", %{
-               "profiles" => %{
-                 "custom" => %{"experts" => ["labor"], "gate_context" => ["treasury"]}
-               }
-             })
+             RegionalV2.profile(
+               "custom",
+               v2(%{
+                 "profiles" => %{
+                   "custom" => %{"experts" => ["labor"], "gate_context" => ["treasury"]}
+                 }
+               })
+             )
 
     assert {:error, {:unknown_contract_identifier, "custom", "weather"}} =
-             RegionalV2.profile("custom", %{
-               "profiles" => %{"custom" => %{"experts" => ["labor", "weather"]}}
-             })
+             RegionalV2.profile(
+               "custom",
+               v2(%{"profiles" => %{"custom" => %{"experts" => ["labor", "weather"]}}})
+             )
 
     assert {:error, {:unknown_contract_identifier, "custom", 7}} =
-             RegionalV2.profile("custom", %{
-               "profiles" => %{"custom" => %{"experts" => ["labor"], "gate_context" => [7]}}
-             })
+             RegionalV2.profile(
+               "custom",
+               v2(%{
+                 "profiles" => %{"custom" => %{"experts" => ["labor"], "gate_context" => [7]}}
+               })
+             )
 
     for invalid <- [
           ["labor"],
@@ -159,14 +166,30 @@ defmodule ElixirDataScience.RegionalV2Test do
           %{"experts" => ["labor"], "active" => "false"}
         ] do
       assert {:error, {:invalid_profile, "custom"}} =
-               RegionalV2.profile("custom", %{"profiles" => %{"custom" => invalid}})
+               RegionalV2.profile("custom", v2(%{"profiles" => %{"custom" => invalid}}))
     end
 
-    assert {:error, :invalid_v2_contract} = RegionalV2.profile("custom", %{})
+    assert {:error, :invalid_v2_contract} = RegionalV2.profile("custom", v2(%{}))
 
     assert {:error, :invalid_v2_contract} =
-             RegionalV2.profile("custom", %{"profiles" => [%{"experts" => ["labor"]}]})
+             RegionalV2.profile("custom", v2(%{"profiles" => [%{"experts" => ["labor"]}]}))
   end
+
+  test "profile/2 requires the exact v2 schema version before admitting a profile" do
+    {:ok, contract} = RegionalV2.load_contract()
+    assert {:ok, _profile} = RegionalV2.profile("leading_signals", contract)
+
+    assert {:error, :invalid_v2_contract} =
+             RegionalV2.profile("leading_signals", Map.delete(contract, "schema_version"))
+
+    assert {:error, :invalid_v2_contract} =
+             RegionalV2.profile(
+               "leading_signals",
+               Map.put(contract, "schema_version", "regional-expert-ensemble.v1")
+             )
+  end
+
+  defp v2(contract), do: Map.put(contract, "schema_version", "regional-expert-ensemble.v2")
 
   test "screened stack ranks by prior MAE and emits exact zero weights" do
     experts = [:labor, :qcew_business, :industry, :formation, :construction, :growth]
