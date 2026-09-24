@@ -11,6 +11,7 @@ defmodule ElixirDataScience.WorkforceEdaScriptTest do
     # that may be one (for example /var on macOS); _build is ignored by Git.
     root =
       Path.join(Mix.Project.build_path(), "workforce-eda-#{System.unique_integer([:positive])}")
+
     File.mkdir_p!(root)
     on_exit(fn -> File.rm_rf!(root) end)
     %{root: root}
