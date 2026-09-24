@@ -94,12 +94,12 @@ Or without a local Elixir installation:
 ```bash
 docker run --rm -v "$PWD:/workspace" -w /workspace \
   elixir:1.20.2-otp-27@sha256:998bb64cb24209d959eb48af9bac1a087f4b5b4d32e91f6e67d666659af04bcd \
-  sh -lc 'mix local.hex 2.5.1 --force && mix local.rebar rebar3 https://builds.hex.pm/installs/1.18.3/rebar3-3.24.0-otp-27 --sha512 158473850233093e6a1417e9779919cb6768402ea967db510d926bc5e74361377e9176014e827c622098e0dbf96b505677addc4bd4817ce2b9b4f4bc8121768b --force && mix deps.get --check-locked && mix hex.audit && mix format --check-formatted && mix test && elixir scripts/verify_livebook_runtime.exs && elixir scripts/run_workforce_eda.exs test/fixtures/workforce/synthetic.csv /tmp/workforce-eda test/fixtures/workforce/release.json && elixir scripts/verify_workforce_eda.exs /tmp/workforce-eda'
-python3 scripts/check_foundation_contracts.py
+  sh -lc 'mix local.hex 2.5.1 --force && mix local.rebar rebar3 https://builds.hex.pm/installs/1.18.3/rebar3-3.24.0-otp-27 --sha512 158473850233093e6a1417e9779919cb6768402ea967db510d926bc5e74361377e9176014e827c622098e0dbf96b505677addc4bd4817ce2b9b4f4bc8121768b --force && mix deps.get --check-locked && mix hex.audit && mix format --check-formatted && mix test && elixir scripts/verify_livebook_runtime.exs && elixir scripts/run_workforce_eda.exs test/fixtures/workforce/synthetic.csv /tmp/workforce-eda test/fixtures/workforce/release.json && elixir scripts/verify_workforce_eda.exs /tmp/workforce-eda' && \
+  python3 scripts/check_foundation_contracts.py
 ```
 
 The foundation contract snapshot check needs only the Python 3 standard library,
-so it runs on the host rather than in the Elixir container.
+so it runs on the host after the container gate succeeds.
 
 The Hex client, Rebar artifact, and container are immutable in CI. The security
 gate fails on retired Hex packages or known advisories; the repository does not
