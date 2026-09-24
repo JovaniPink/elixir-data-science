@@ -18,7 +18,8 @@ if (ref["synthetic"] == true or Map.has_key?(ref, "input_sha256")) and
 
 binding =
   if ref["synthetic"] == true do
-    nil
+    # :json encodes the atom nil as the string "nil"; :null is JSON null.
+    :null
   else
     [record_path] = materialization_args
     record_bytes = File.read!(record_path)
@@ -52,7 +53,10 @@ binding =
     if Path.type(relative) == :absolute or ".." in Path.split(relative),
       do: raise("input outside materialization")
 
-    Enum.reduce(Path.split(Path.expand(input)), "", fn part, parent ->
+    # Seed with the filesystem root: Path.join("", "/") would drop the absolute prefix.
+    [root | parts] = Path.split(Path.expand(input))
+
+    Enum.reduce(parts, root, fn part, parent ->
       path = Path.join(parent, part)
       if File.lstat!(path).type == :symlink, do: raise("symlink input path rejected")
       path

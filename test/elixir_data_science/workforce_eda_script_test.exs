@@ -7,7 +7,10 @@ defmodule ElixirDataScience.WorkforceEdaScriptTest do
   @regions ~w(01 02 04 05 06 08 09 10 11 12 13 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 44 45 46 47 48 49 50 51 53 54 55 56)
 
   setup do
-    root = Path.join(System.tmp_dir!(), "workforce-eda-#{System.unique_integer([:positive])}")
+    # The materialized run rejects symlinked path components, so avoid a system temp directory
+    # that may be one (for example /var on macOS); _build is ignored by Git.
+    root =
+      Path.join(Mix.Project.build_path(), "workforce-eda-#{System.unique_integer([:positive])}")
     File.mkdir_p!(root)
     on_exit(fn -> File.rm_rf!(root) end)
     %{root: root}
@@ -33,6 +36,60 @@ defmodule ElixirDataScience.WorkforceEdaScriptTest do
     expected = sha256(File.read!(@fixture))
     assert receipt["input_sha256"] == expected
     assert receipt["release"]["input_sha256"] == expected
+    assert receipt["input_binding"] == :null
+  end
+
+  test "materialized run walks the absolute input path and binds the object", %{root: root} do
+    bytes = File.read!(@fixture)
+    input = Path.join(root, "synthetic.csv")
+    File.write!(input, bytes)
+    object = %{"sha256" => sha256(bytes), "size" => byte_size(bytes)}
+    item = %{"path" => "synthetic.csv", "object" => object}
+
+    assessment = %{
+      "status" => "approved",
+      "use" => "private_research",
+      "domain" => "workforce",
+      "source_ids" => ["synthetic"],
+      "operations" => ~w(research transformation storage gcs_storage)
+    }
+
+    assessment_json = encode(assessment)
+
+    manifest = %{
+      "artifact" => %{"domain" => "workforce"},
+      "assessment" => %{"sha256" => sha256(assessment_json)},
+      "source_ids" => ["synthetic"],
+      "objects" => [item]
+    }
+
+    manifest_json = encode(manifest)
+    ref = %{"sha256" => sha256(manifest_json), "size" => byte_size(manifest_json)}
+
+    record = %{
+      "schema_version" => "verified-materialization.v1",
+      "release" => ref,
+      "manifest_json" => manifest_json,
+      "manifest" => manifest,
+      "assessment_json" => assessment_json,
+      "assessment" => assessment,
+      "purpose" => "private_research",
+      "objects" => [item]
+    }
+
+    release = Path.join(root, "release.json")
+    record_path = Path.join(root, "materialization.json")
+    File.write!(release, encode(ref))
+    File.write!(record_path, encode(record))
+    output = Path.join(root, "out")
+
+    assert {_, 0} = run_script([input, output, release, record_path])
+
+    receipt = :json.decode(File.read!(Path.join(output, "analysis-run.v2.json")))
+    assert receipt["evidence_mode"] == "current-snapshot"
+    assert receipt["input_binding"]["path"] == "synthetic.csv"
+    assert receipt["input_binding"]["object"] == object
+    assert receipt["input_binding"]["materialization_sha256"] == sha256(File.read!(record_path))
   end
 
   test "synthetic run fails closed when input bytes differ from the release", %{root: root} do
@@ -61,6 +118,9 @@ defmodule ElixirDataScience.WorkforceEdaScriptTest do
   defp run_script(args) do
     System.cmd(System.find_executable("elixir"), [@script | args], stderr_to_stdout: true)
   end
+
+  @spec encode(map()) :: binary()
+  defp encode(term), do: IO.iodata_to_binary(:json.encode(term))
 
   @spec sha256(binary()) :: String.t()
   defp sha256(data), do: :crypto.hash(:sha256, data) |> Base.encode16(case: :lower)
