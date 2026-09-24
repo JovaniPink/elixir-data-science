@@ -129,6 +129,45 @@ defmodule ElixirDataScience.RegionalV2Test do
              RegionalV2.profile("energy_prospective")
   end
 
+  test "profile returns tagged errors instead of raising or leaking raw values" do
+    assert {:error, {:unknown_profile, "missing"}} = RegionalV2.profile("missing")
+
+    assert {:ok, %RegionalV2.Profile{experts: [:labor], gate_context: [:treasury]}} =
+             RegionalV2.profile("custom", %{
+               "profiles" => %{
+                 "custom" => %{"experts" => ["labor"], "gate_context" => ["treasury"]}
+               }
+             })
+
+    assert {:error, {:unknown_contract_identifier, "custom", "weather"}} =
+             RegionalV2.profile("custom", %{
+               "profiles" => %{"custom" => %{"experts" => ["labor", "weather"]}}
+             })
+
+    assert {:error, {:unknown_contract_identifier, "custom", 7}} =
+             RegionalV2.profile("custom", %{
+               "profiles" => %{"custom" => %{"experts" => ["labor"], "gate_context" => [7]}}
+             })
+
+    for invalid <- [
+          ["labor"],
+          "labor",
+          nil,
+          %{"experts" => "labor"},
+          %{},
+          %{"experts" => ["labor"], "gate_context" => nil},
+          %{"experts" => ["labor"], "active" => "false"}
+        ] do
+      assert {:error, {:invalid_profile, "custom"}} =
+               RegionalV2.profile("custom", %{"profiles" => %{"custom" => invalid}})
+    end
+
+    assert {:error, :invalid_v2_contract} = RegionalV2.profile("custom", %{})
+
+    assert {:error, :invalid_v2_contract} =
+             RegionalV2.profile("custom", %{"profiles" => [%{"experts" => ["labor"]}]})
+  end
+
   test "screened stack ranks by prior MAE and emits exact zero weights" do
     experts = [:labor, :qcew_business, :industry, :formation, :construction, :growth]
 
