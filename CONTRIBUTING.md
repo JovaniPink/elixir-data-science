@@ -62,6 +62,7 @@ mix test
 elixir scripts/verify_livebook_runtime.exs
 elixir scripts/run_workforce_eda.exs test/fixtures/workforce/synthetic.csv /tmp/workforce-eda test/fixtures/workforce/release.json
 elixir scripts/verify_workforce_eda.exs /tmp/workforce-eda
+python3 scripts/check_foundation_contracts.py
 ```
 
 Use the pinned container command in the README when local Elixir is unavailable.
