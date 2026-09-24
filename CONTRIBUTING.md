@@ -60,6 +60,8 @@ mix hex.audit
 mix format --check-formatted
 mix test
 elixir scripts/verify_livebook_runtime.exs
+elixir scripts/run_workforce_eda.exs test/fixtures/workforce/synthetic.csv /tmp/workforce-eda test/fixtures/workforce/release.json
+elixir scripts/verify_workforce_eda.exs /tmp/workforce-eda
 ```
 
 Use the pinned container command in the README when local Elixir is unavailable.

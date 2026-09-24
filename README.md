@@ -84,6 +84,8 @@ mix hex.audit
 mix format --check-formatted
 mix test
 elixir scripts/verify_livebook_runtime.exs
+elixir scripts/run_workforce_eda.exs test/fixtures/workforce/synthetic.csv /tmp/workforce-eda test/fixtures/workforce/release.json
+elixir scripts/verify_workforce_eda.exs /tmp/workforce-eda
 ```
 
 Or without a local Elixir installation:
@@ -91,7 +93,7 @@ Or without a local Elixir installation:
 ```bash
 docker run --rm -v "$PWD:/workspace" -w /workspace \
   elixir:1.20.2-otp-27@sha256:998bb64cb24209d959eb48af9bac1a087f4b5b4d32e91f6e67d666659af04bcd \
-  sh -lc 'mix local.hex 2.5.1 --force && mix local.rebar rebar3 https://builds.hex.pm/installs/1.18.3/rebar3-3.24.0-otp-27 --sha512 158473850233093e6a1417e9779919cb6768402ea967db510d926bc5e74361377e9176014e827c622098e0dbf96b505677addc4bd4817ce2b9b4f4bc8121768b --force && mix deps.get --check-locked && mix hex.audit && mix format --check-formatted && mix test && elixir scripts/verify_livebook_runtime.exs'
+  sh -lc 'mix local.hex 2.5.1 --force && mix local.rebar rebar3 https://builds.hex.pm/installs/1.18.3/rebar3-3.24.0-otp-27 --sha512 158473850233093e6a1417e9779919cb6768402ea967db510d926bc5e74361377e9176014e827c622098e0dbf96b505677addc4bd4817ce2b9b4f4bc8121768b --force && mix deps.get --check-locked && mix hex.audit && mix format --check-formatted && mix test && elixir scripts/verify_livebook_runtime.exs && elixir scripts/run_workforce_eda.exs test/fixtures/workforce/synthetic.csv /tmp/workforce-eda test/fixtures/workforce/release.json && elixir scripts/verify_workforce_eda.exs /tmp/workforce-eda'
 ```
 
 The Hex client, Rebar artifact, and container are immutable in CI. The security
@@ -227,6 +229,10 @@ redistributed.
 - `scripts/verify_regional_expert_ensemble.exs`: no-write regional
   Elixir-Python artifact verifier.
 - `scripts/verify_livebook_runtime.exs`: standalone path/lock/chart check.
+- `scripts/run_workforce_eda.exs`: standalone descriptive workforce EDA peer; the
+  input must match its release reference hash.
+- `scripts/verify_workforce_eda.exs`: allocation invariant check for workforce EDA
+  output.
 - `docs/data-sources/`: source, terms, provenance, and claim boundaries.
 - `docs/experiments/`: dated run records and bounded interpretations.
 - `docs/guides/`: reader-focused model and result interpretation.
