@@ -24,6 +24,13 @@ binding =
     [record_path] = materialization_args
     record_bytes = File.read!(record_path)
     record = :json.decode(record_bytes)
+    # Required envelope of contracts/data-foundation/verified-materialization.v1.json.
+    fields = ~w(release manifest manifest_json assessment assessment_json purpose objects)
+
+    if not is_map(record) or not Enum.all?(fields, &Map.has_key?(record, &1)) or
+         not is_binary(record["verifier_version"]) or record["verifier_version"] == "",
+       do: raise("verified materialization envelope incomplete")
+
     manifest = :json.decode(record["manifest_json"])
     assessment = :json.decode(record["assessment_json"])
 

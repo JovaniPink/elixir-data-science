@@ -75,15 +75,22 @@ defmodule ElixirDataScience.WorkforceEdaScriptTest do
       "assessment_json" => assessment_json,
       "assessment" => assessment,
       "purpose" => "private_research",
+      "verifier_version" => "workforce-eda-script-test",
       "objects" => [item]
     }
 
     release = Path.join(root, "release.json")
     record_path = Path.join(root, "materialization.json")
     File.write!(release, encode(ref))
-    File.write!(record_path, encode(record))
     output = Path.join(root, "out")
 
+    File.write!(record_path, encode(Map.delete(record, "verifier_version")))
+    assert {message, status} = run_script([input, output, release, record_path])
+    assert status != 0
+    assert message =~ "verified materialization envelope incomplete"
+    refute File.exists?(output)
+
+    File.write!(record_path, encode(record))
     assert {_, 0} = run_script([input, output, release, record_path])
 
     receipt = :json.decode(File.read!(Path.join(output, "analysis-run.v2.json")))
