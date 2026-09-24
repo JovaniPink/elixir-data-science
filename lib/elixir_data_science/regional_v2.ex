@@ -7,6 +7,7 @@ defmodule ElixirDataScience.RegionalV2 do
   """
 
   @contract_path Path.expand("../../contracts/regional-expert-ensemble.v2.json", __DIR__)
+  @schema_version "regional-expert-ensemble.v2"
 
   defmodule ArtifactReceipt do
     @moduledoc "Integrity metadata for one declared normalized artifact."
@@ -207,12 +208,8 @@ defmodule ElixirDataScience.RegionalV2 do
   @spec load_contract() :: {:ok, map()} | {:error, term()}
   def load_contract do
     with {:ok, bytes} <- File.read(@contract_path),
-         {:ok, %{"schema_version" => "regional-expert-ensemble.v2"} = contract} <-
-           Jason.decode(bytes) do
-      {:ok, contract}
-    else
-      {:ok, _other} -> {:error, :invalid_v2_contract}
-      error -> error
+         {:ok, decoded} <- Jason.decode(bytes) do
+      validate_contract(decoded)
     end
   end
 
@@ -223,21 +220,39 @@ defmodule ElixirDataScience.RegionalV2 do
     |> sha256()
   end
 
+  @doc """
+  Admits a profile from the shared v2 contract.
+
+  Returns a tagged error, never raises, for an unknown or inactive profile, a
+  malformed profile entry, or an identifier the contract does not recognize.
+  """
   @spec profile(String.t()) :: {:ok, Profile.t()} | {:error, term()}
   def profile(profile_id) when is_binary(profile_id) do
-    with {:ok, contract} <- load_contract(),
-         %{} = value <- get_in(contract, ["profiles", profile_id]) do
+    with {:ok, contract} <- load_contract() do
+      profile(profile_id, contract)
+    end
+  end
+
+  @doc """
+  Admits a profile from an already decoded contract map.
+
+  The map must carry the exact v2 `schema_version` checked by `load_contract/0`.
+  """
+  @spec profile(String.t(), map()) :: {:ok, Profile.t()} | {:error, term()}
+  def profile(profile_id, contract) when is_binary(profile_id) and is_map(contract) do
+    with {:ok, contract} <- validate_contract(contract),
+         {:ok, value} <- fetch_profile(contract, profile_id),
+         {:ok, active?} <- profile_active(value, profile_id),
+         {:ok, experts} <- known_ids(Map.get(value, "experts"), profile_id),
+         {:ok, gate_context} <- known_ids(Map.get(value, "gate_context", []), profile_id) do
       profile = %Profile{
         id: profile_id,
-        active?: Map.get(value, "active", true),
-        experts: Enum.map(value["experts"], &known_id!/1),
-        gate_context: Enum.map(Map.get(value, "gate_context", []), &known_id!/1)
+        active?: active?,
+        experts: experts,
+        gate_context: gate_context
       }
 
       if profile.active?, do: {:ok, profile}, else: {:error, {:inactive_profile, profile_id}}
-    else
-      nil -> {:error, {:unknown_profile, profile_id}}
-      error -> error
     end
   end
 
@@ -449,18 +464,61 @@ defmodule ElixirDataScience.RegionalV2 do
     end
   end
 
-  defp known_id!("labor"), do: :labor
-  defp known_id!("qcew_business"), do: :qcew_business
-  defp known_id!("industry"), do: :industry
-  defp known_id!("formation"), do: :formation
-  defp known_id!("construction"), do: :construction
-  defp known_id!("growth"), do: :growth
-  defp known_id!("housing"), do: :housing
-  defp known_id!("energy"), do: :energy
-  defp known_id!("labor_flows"), do: :labor_flows
-  defp known_id!("credit"), do: :credit
-  defp known_id!("treasury"), do: :treasury
-  defp known_id!(id), do: raise(ArgumentError, "unknown contract identifier: #{id}")
+  defp validate_contract(%{"schema_version" => @schema_version} = contract), do: {:ok, contract}
+  defp validate_contract(_other), do: {:error, :invalid_v2_contract}
+
+  defp fetch_profile(%{"profiles" => profiles}, profile_id) when is_map(profiles) do
+    case Map.fetch(profiles, profile_id) do
+      {:ok, %{} = value} -> {:ok, value}
+      {:ok, _other} -> {:error, {:invalid_profile, profile_id}}
+      :error -> {:error, {:unknown_profile, profile_id}}
+    end
+  end
+
+  defp fetch_profile(_contract, _profile_id), do: {:error, :invalid_v2_contract}
+
+  defp profile_active(value, profile_id) do
+    case Map.get(value, "active", true) do
+      active? when is_boolean(active?) -> {:ok, active?}
+      _other -> {:error, {:invalid_profile, profile_id}}
+    end
+  end
+
+  defp known_ids(ids, profile_id) when is_list(ids) do
+    ids
+    |> Enum.reduce_while({:ok, []}, fn id, {:ok, known} ->
+      case known_id(id) do
+        {:ok, atom} -> {:cont, {:ok, [atom | known]}}
+        :error -> {:halt, {:error, {:unknown_contract_identifier, profile_id, id}}}
+      end
+    end)
+    |> case do
+      {:ok, known} -> {:ok, Enum.reverse(known)}
+      {:error, _reason} = error -> error
+    end
+  end
+
+  defp known_ids(_ids, profile_id), do: {:error, {:invalid_profile, profile_id}}
+
+  defp known_id("labor"), do: {:ok, :labor}
+  defp known_id("qcew_business"), do: {:ok, :qcew_business}
+  defp known_id("industry"), do: {:ok, :industry}
+  defp known_id("formation"), do: {:ok, :formation}
+  defp known_id("construction"), do: {:ok, :construction}
+  defp known_id("growth"), do: {:ok, :growth}
+  defp known_id("housing"), do: {:ok, :housing}
+  defp known_id("energy"), do: {:ok, :energy}
+  defp known_id("labor_flows"), do: {:ok, :labor_flows}
+  defp known_id("credit"), do: {:ok, :credit}
+  defp known_id("treasury"), do: {:ok, :treasury}
+  defp known_id(_id), do: :error
+
+  defp known_id!(id) do
+    case known_id(id) do
+      {:ok, atom} -> atom
+      :error -> raise ArgumentError, "unknown contract identifier: #{inspect(id)}"
+    end
+  end
 
   defp expert_order do
     {:ok, contract} = load_contract()
