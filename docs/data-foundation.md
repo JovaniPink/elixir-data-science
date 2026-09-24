@@ -6,6 +6,8 @@ The standalone script uses the OTP JSON module and requires the repository's dec
 
 Python and Elixir remain peers. Selected replication proves this descriptive method; it does not require every future model twice. The unavailable regional v2 ensemble remains a separate blocked contract. No cloud credentials or source acquisition are needed for this script.
 
+The input must match the SHA-256 pinned by its release reference, including synthetic references (`input_sha256`); a mismatch fails the run before any output is written. The committed [synthetic fixture](../test/fixtures/workforce/README.md) documents its generation rule, provenance and permitted use.
+
 ## Adoption contract - foundation 0.2.0
 
 | Field | Contract |
