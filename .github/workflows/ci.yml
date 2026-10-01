@@ -31,3 +31,7 @@ jobs:
       - run: mix format --check-formatted
       - run: mix test
       - run: elixir scripts/verify_livebook_runtime.exs
+      - name: Verify independent synthetic workforce EDA
+        run: |
+          elixir scripts/run_workforce_eda.exs test/fixtures/workforce/synthetic.csv /tmp/workforce-eda test/fixtures/workforce/release.json
+          elixir scripts/verify_workforce_eda.exs /tmp/workforce-eda

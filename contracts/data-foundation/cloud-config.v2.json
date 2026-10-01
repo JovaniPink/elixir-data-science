@@ -1,0 +1,1 @@
+{"$schema":"https://json-schema.org/draft/2020-12/schema","description":"Envelope shape only. Producer semantic and byte-binding validation is required.","properties":{"schema_version":{"const":"cloud-config.v2"}},"required":["schema_version","operator_account","project_id","project_number","buckets","service_accounts","limits","state_bucket"],"type":"object"}

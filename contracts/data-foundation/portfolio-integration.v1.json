@@ -1,0 +1,1 @@
+{"$schema":"https://json-schema.org/draft/2020-12/schema","description":"Envelope shape only. Producer semantic and byte-binding validation is required.","properties":{"schema_version":{"const":"portfolio-integration.v1"}},"required":["schema_version","repositories","foundation","contracts","gates","accepted_artifacts","acceptance"],"type":"object"}
